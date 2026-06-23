@@ -1,0 +1,12 @@
+{
+  "name": "spedas-claude",
+  "version": "0.1.0",
+  "description": "Claude Code plugin wrapper for the official SPEDAS MCP heliophysics tools.",
+  "homepage": "https://github.com/spedas/spedas_claude",
+  "repository": "https://github.com/spedas/spedas_claude",
+  "license": "MIT",
+  "mcpServers": "./.mcp.json",
+  "skills": "./skills",
+  "commands": "./commands",
+  "hooks": "./hooks/hooks.json"
+}
