@@ -53,7 +53,12 @@ Expected behavior:
 
 ```bash
 python scripts/validate_plugin.py
+python scripts/smoke_mcp_runtime.py --json
 ```
 
-This validation is intentionally network-free; it checks plugin structure and
-that `.mcp.json` points at `spedas/spedas_mcp`.
+`validate_plugin.py` is intentionally network-free; it checks plugin structure and
+that `.mcp.json` points at `spedas/spedas_mcp`. `smoke_mcp_runtime.py` is a real
+stdio MCP runtime smoke: it starts the configured `spedas` server, performs
+`initialize` + `tools/list`, and verifies the core SPEDAS tools without private
+credentials, interactive UI, data fetches, or SPICE kernel downloads. It may need
+public network access the first time `uvx` installs `spedas_mcp`.
