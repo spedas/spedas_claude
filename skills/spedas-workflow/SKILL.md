@@ -1,58 +1,72 @@
 ---
 name: spedas-workflow
-description: Use SPEDAS MCP to discover heliophysics data sources, plan observations, fetch compact data products, and keep provenance/artifacts explicit.
+description: Use when working with SPEDAS, PySPEDAS, or the SPEDAS MCP plugin to discover heliophysics data sources, choose missions/parameters/time ranges, plan science workflows, run safe metadata-first checks, fetch/export artifacts only when appropriate, and preserve provenance.
 ---
 
-# SPEDAS workflow skill
+# SPEDAS / PySPEDAS workflow skill
 
-Use this skill when a user asks Claude Code or Codex to work with SPEDAS, PySPEDAS,
-CDAWeb, PDS, SPICE geometry, or multi-mission heliophysics data discovery.
+Use this skill when the user asks a heliophysics data question, wants to use SPEDAS/PySPEDAS, or wants an agent runtime to call the SPEDAS MCP plugin.
 
-## Mental model
+## Operating model
 
-Treat `spedas_mcp` as one SPEDAS interface, not as three unrelated backend MCPs.
-The public structure is:
+Think in four layers:
 
-1. **Science workflow layer** — formulate and compare analysis plans.
-2. **Unified data layer** — browse/load/fetch/manage data by `source_type`.
-3. **Data-source categories** — `cdaweb`, `pds`, `spice`.
-4. **Internal backends** — `xhelio-cdaweb`, `xhelio-pds`, `xhelio-spice` are implementation details.
+1. **Science question** — event, mission, interval, coordinate system, expected signal, and success criteria.
+2. **Workflow layer** — SPEDAS MCP planning/comparison/bundle tools or PySPEDAS recipes.
+3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model.
+4. **Artifacts and provenance** — outputs are paths, manifests, hashes, plots, tables, and notes; avoid dumping large arrays/CDF/tplot objects into chat.
 
-## Preferred MCP tools
+## Default workflow
 
-Start with:
+1. Restate the science target: mission(s), time window, parameters, geometry/coordinate needs, and whether real data fetch is allowed.
+2. Start metadata-first:
+   - MCP: call `spedas_overview`, then `search_spedas_data_sources` or `browse_data_sources`.
+   - PySPEDAS: identify the relevant mission loader and variables before loading data.
+3. Plan before fetch:
+   - MCP: use `plan_spedas_observation` and, when multiple archives are relevant, `compare_cdaweb_pds_spice`.
+   - PySPEDAS: decide `trange`, `probe`, `datatype`, `level`, variable names, and cache directory.
+4. Fetch only when the user/task calls for it. Keep windows narrow, make caches explicit, and expect public archive rate limits.
+5. Save artifacts with provenance: request, tool call/source, versions, cache/output roots, SHA-256 where useful, variable/source mapping, and caveats.
+6. Report results conclusion-first, with paths and exact next actions.
 
-- `spedas_overview` — learn available layers/tools.
-- `search_spedas_data_sources` — search likely CDAWeb/PDS/SPICE sources for a science query.
-- `plan_spedas_observation` — turn a target/interval/phenomenon into an observation plan.
-- `compare_cdaweb_pds_spice` — decide which archive/source type is appropriate.
-- `create_spedas_analysis_bundle` — create a reusable plan/provenance scaffold.
+## Preferred SPEDAS MCP tools
 
-Then use the unified data layer:
+- Discovery and mental model: `spedas_overview`.
+- Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
+- Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
+- Treat source-specific CDAWeb/PDS/SPICE tools as compatibility or maintenance surfaces unless the user asks for low-level backend behavior.
 
-- `browse_data_sources(source_type="all"|"cdaweb"|"pds"|"spice")`
-- `load_data_source(source_type, source_id)`
-- `browse_data_parameters(source_type, dataset_id, ...)`
-- `fetch_data_product(source_type, ...)`
-- `manage_data_cache(source_type, action, ...)`
+## PySPEDAS package workflow
 
-Compatibility/low-level tools may exist for CDAWeb/PDS/SPICE, but prefer the unified
-`data_*` tools unless debugging or maintaining the MCP itself.
+Use PySPEDAS directly when the user needs Python/tplot workflows, plotting, existing mission routines, or compatibility with SPEDAS notebooks/scripts.
 
-## Artifact discipline
+Minimum safe pattern:
 
-- Do not paste large arrays, full CDF contents, or long tplot dumps into chat.
-- Prefer artifact paths, compact summaries, hashes, variable names, time ranges, and provenance.
-- For real downloads, use narrow time intervals first and say whether the call is networked.
-- Preserve cache/output directories in a predictable project-local or user-cache location.
+```python
+import pyspedas
+from pytplot import get_data, tplot_names
 
-## Failure handling
+trange = ["2015-10-16/13:06", "2015-10-16/13:08"]
+pyspedas.mms.fgm(trange=trange, probe="1", data_rate="srvy", level="l2", time_clip=True)
+print(tplot_names())
+```
 
-When a tool fails, classify the failure before retrying:
+Before expanding the interval, confirm variable names, data cadence, download/cache behavior, and whether the public archive is rate-limiting.
 
-- **MCP/tool bug** — wrong argument schema, impossible route, serialization issue.
-- **Backend data gap** — dataset metadata missing, archive label incomplete, unsupported mission.
-- **External-service limitation** — network timeout/rate limit/remote archive unavailable.
-- **Documentation gap** — tool can work but names/arguments do not tell the agent what to do.
+## Failure classification
 
-Report exact tool name, arguments, error text, time range, and source_type.
+When something fails, label it precisely:
+
+- **MCP wrapper issue** — plugin config, server startup, schema, runtime smoke, CLI integration.
+- **SPEDAS MCP issue** — unified tool behavior, planning semantics, parameter mapping, error shape.
+- **Backend/data gap** — missing CDAWeb variable, incomplete PDS label/metadata, unavailable SPICE kernel.
+- **External service limit** — network, archive outage, timeout, HTTP 429, cold cache.
+- **Docs/skills gap** — the tool works but first-user instructions or scientific method are unclear.
+
+## References in this skill folder
+
+- `reference/mcp-quickstart.md` — Claude/Codex plugin smoke and first user checks.
+- `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
+- `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.
+- `reference/artifact-provenance.md` — what to save for reproducible science.
+- `reference/science-examples.md` — starter prompts for MMS, Juno, PSP, THEMIS, and upstream solar wind.
