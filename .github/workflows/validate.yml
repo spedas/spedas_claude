@@ -12,5 +12,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - uses: astral-sh/setup-uv@v5
       - name: Validate plugin wrapper
         run: python scripts/validate_plugin.py
+      - name: Runtime smoke MCP server
+        run: python scripts/smoke_mcp_runtime.py --json
