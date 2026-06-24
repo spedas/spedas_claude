@@ -61,6 +61,30 @@ def _server_command(server: dict[str, Any]) -> tuple[str, list[str]]:
     return _expand(command), [_expand(item) for item in args]
 
 
+def _is_writable_dir(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        probe = path / ".spedas-smoke-write-test"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink(missing_ok=True)
+        return True
+    except OSError:
+        return False
+
+
+def _prefer_temp_if_unwritable(env: dict[str, str], key: str, candidate: Path, fallback: Path) -> None:
+    current = os.environ.get(key)
+    if current:
+        expanded = Path(_expand(current))
+        if not _is_writable_dir(expanded):
+            fallback.mkdir(parents=True, exist_ok=True)
+            env[key] = str(fallback)
+        return
+    if not _is_writable_dir(candidate):
+        fallback.mkdir(parents=True, exist_ok=True)
+        env[key] = str(fallback)
+
+
 def _server_env(server: dict[str, Any], tmp: Path) -> dict[str, str]:
     env = os.environ.copy()
     configured = server.get("env") or {}
@@ -69,9 +93,25 @@ def _server_env(server: dict[str, Any], tmp: Path) -> dict[str, str]:
     for key, value in configured.items():
         if isinstance(key, str) and isinstance(value, str):
             env[key] = _expand(value)
-    env.setdefault("XHELIO_CDAWEB_CACHE_DIR", str(tmp / "cdaweb"))
-    env.setdefault("PDSMCP_CACHE_DIR", str(tmp / "pds"))
-    env.setdefault("XHELIO_SPICE_KERNEL_DIR", str(tmp / "spice"))
+
+    # The packaged .mcp.json points at normal user caches for real plugin use.
+    # Runtime smoke tests should be hermetic unless the caller explicitly set a
+    # cache variable in the process environment. This keeps CI/Codex sandboxes
+    # from writing to user caches and avoids false failures when HOME is read-only.
+    isolated_data_caches = {
+        "XHELIO_CDAWEB_CACHE_DIR": tmp / "cdaweb",
+        "PDSMCP_CACHE_DIR": tmp / "pds",
+        "XHELIO_SPICE_KERNEL_DIR": tmp / "spice",
+    }
+    for key, path in isolated_data_caches.items():
+        if key not in os.environ:
+            path.mkdir(parents=True, exist_ok=True)
+            env[key] = str(path)
+
+    _prefer_temp_if_unwritable(env, "UV_CACHE_DIR", Path.home() / ".cache" / "uv", tmp / "uv-cache")
+    _prefer_temp_if_unwritable(env, "XDG_CACHE_HOME", Path.home() / ".cache", tmp / "xdg-cache")
+    tmp_candidate = Path(os.environ.get("TMPDIR", tempfile.gettempdir()))
+    _prefer_temp_if_unwritable(env, "TMPDIR", tmp_candidate, tmp / "tmp")
     return env
 
 

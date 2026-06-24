@@ -62,3 +62,22 @@ stdio MCP runtime smoke: it starts the configured `spedas` server, performs
 `initialize` + `tools/list`, and verifies the core SPEDAS tools without private
 credentials, interactive UI, data fetches, or SPICE kernel downloads. It may need
 public network access the first time `uvx` installs `spedas_mcp`.
+
+## Real Claude Code CLI smoke
+
+A safe first live check is metadata/planning only:
+
+```bash
+claude -p   --plugin-dir .   --mcp-config .mcp.json   --allowedTools mcp__spedas__spedas_overview,mcp__spedas__browse_data_sources,mcp__spedas__plan_spedas_observation   "Use the SPEDAS MCP for a safe metadata-only MMS planning smoke. Do not fetch data or download kernels."
+```
+
+Expected result: Claude initializes the `spedas` MCP server and can call SPEDAS MCP tools such as `spedas_overview`, `browse_data_sources`, and `plan_spedas_observation`.
+
+For CI/local wrapper validation without a full Claude session:
+
+```bash
+python scripts/validate_plugin.py
+python scripts/smoke_mcp_runtime.py --json
+```
+
+The runtime smoke isolates SPEDAS data caches and falls back to temporary `uv`/XDG/tmp caches when the default cache location is not writable. First runs may be slow because `uvx` resolves `spedas_mcp` from GitHub.
