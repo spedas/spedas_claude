@@ -1,0 +1,3 @@
+{"step": 1, "layer": "mcp", "tool": "spedas_overview", "args": {}, "result_summary": "FILL: discovery output summary", "fetched_data": false}
+{"step": 2, "layer": "mcp", "tool": "browse_data_sources", "args": {"source_type": "cdaweb"}, "result_summary": "FILL", "fetched_data": false}
+{"step": 3, "layer": "mcp", "tool": "plan_spedas_observation", "args": {"FILL": "..."}, "result_summary": "FILL", "fetched_data": false}

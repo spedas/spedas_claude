@@ -9,6 +9,9 @@ Use unified data-layer tools:
 5. `manage_data_cache(source_type, ...)` for cache inspection or cleanup.
 
 Keep fetches narrow. Return artifact paths and provenance, not large raw arrays.
+`fetch_data_product` / `fetch_data` / `fetch_pds_data` are **opt-in network
+downloads** subject to archive rate limits — confirm scope and record opt-in first.
+See the fetch safety boundary in [`docs/safety.md`](../docs/safety.md).
 
 Concrete arguments, return shapes, and no-fetch caveats for each tool are in
 `skills/spedas-workflow/reference/tool-examples.md`. For when to drop from these

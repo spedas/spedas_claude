@@ -1,0 +1,14 @@
+{
+  "run_id": "FILL: e.g. 2015-10-16-mms-magnetopause",
+  "generated_utc": "FILL: ISO8601 timestamp",
+  "artifacts": [
+    {
+      "path": "FILL: relative path to output (plot/table/csv)",
+      "description": "FILL: what it is",
+      "bytes": 0,
+      "sha256": "FILL: e.g. shasum -a 256 <path>  (or sha256sum on Linux)",
+      "source_tool": "FILL: which tool/call produced it"
+    }
+  ],
+  "notes": "FILL or null"
+}

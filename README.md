@@ -10,6 +10,31 @@ a heliophysics research assistant.
 Claude Code -> spedas_claude plugin -> spedas MCP server -> CDAWeb / PDS / SPICE backends
 ```
 
+## Architecture: two independent layers (read this first)
+
+This plugin touches **two layers that are installed and run differently**. Keeping
+them straight avoids the most common "is this a plugin bug?" confusion.
+
+| | MCP tool layer (this plugin wires it up) | PySPEDAS layer (you manage it) |
+|---|---|---|
+| What it is | The `spedas` MCP server's tools (`spedas_overview`, `browse_data_sources`, `get_ephemeris`, …) | The [PySPEDAS](https://github.com/spedas/pyspedas) Python package + `pytplot` |
+| Who installs it | `uvx` resolves `spedas_mcp` automatically on first run (see `.mcp.json`) | **You**, in your own Python environment (`pip install pyspedas`) |
+| Where it runs | A subprocess Claude Code starts; Claude calls it as MCP tools | Your local Python interpreter / notebook / script — **not** inside this plugin |
+| What this repo provides | The MCP wiring, the workflow skill, and the slash commands | Only *recipes* and *patterns*; **no** PySPEDAS install |
+
+**The plugin does not install PySPEDAS or `pytplot`, and Claude's tool runtime does
+not provide them.** The PySPEDAS code blocks in the skill and in
+[`reference/pyspedas-patterns.md`](skills/spedas-workflow/reference/pyspedas-patterns.md)
+are recipes you run in *your own* Python environment. If you run them somewhere
+without PySPEDAS installed you will get `ModuleNotFoundError: No module named
+'pyspedas'` — that is an environment-scoping gap, not a plugin defect. Install it
+with `pip install pyspedas` (or `uv pip install pyspedas`) in the environment
+where you intend to run those recipes.
+
+Most of this plugin's value is in the **MCP tool layer**, which needs no Python
+environment of your own beyond `uvx`. Reach for the PySPEDAS layer only when you
+explicitly want local Python/tplot workflows.
+
 ## What this repo provides
 
 - `.claude-plugin/plugin.json` — plugin metadata and resource declarations.
@@ -31,10 +56,25 @@ Claude Code -> spedas_claude plugin -> spedas MCP server -> CDAWeb / PDS / SPICE
   that, the resolved environment is cached by `uv`.
 - Python 3.10+ for the validation scripts (the MCP server itself requires 3.10+).
 
-This plugin does **not** install [PySPEDAS](https://github.com/spedas/pyspedas).
-PySPEDAS is a separate local Python layer; the skill's PySPEDAS recipes assume you
-have installed it yourself in your own environment. The plugin only wires up the
-SPEDAS **MCP** tools.
+### Optional (only for the PySPEDAS layer)
+
+- [PySPEDAS](https://github.com/spedas/pyspedas) + `pytplot`, installed **by you**
+  in your own Python environment (`pip install pyspedas`). This plugin does **not**
+  install them and the MCP tool layer does **not** need them. See
+  [Architecture: two independent layers](#architecture-two-independent-layers-read-this-first)
+  above — the PySPEDAS recipes in the skill are for *your* local Python, not the
+  plugin's runtime.
+
+### Where the rest is documented
+
+- Cache/temp/network **environment variables** (mandatory vs. optional vs. advanced):
+  [`docs/configuration.md`](docs/configuration.md).
+- **Fetch/kernel safety** boundary, opt-in language, and what to do before enabling
+  real downloads: [`docs/safety.md`](docs/safety.md).
+- **Failure taxonomy / triage runbook** (which error is which, where to file it):
+  [`skills/spedas-workflow/reference/troubleshooting.md`](skills/spedas-workflow/reference/troubleshooting.md).
+- **Provenance templates** for reproducible runs:
+  [`templates/provenance/`](templates/provenance/).
 
 ## First-run flow
 
@@ -194,7 +234,7 @@ CI (`.github/workflows/validate.yml`) runs all three.
 | `validate_plugin.py` reports a declared path does not resolve | a resource was moved/renamed but `.claude-plugin/plugin.json` still points at the old path, or the path was written relative to `.claude-plugin/` | move the resource to the plugin root, or correct the path key (paths are plugin-root-relative) |
 | `validate_plugin.py`: `spedas server must install from github.com/spedas/spedas_mcp` | `.mcp.json` points at a fork/wrong repo | restore the official `--from` URL |
 | `smoke_mcp_runtime.py` hangs or times out on first run | `uvx` is resolving `spedas_mcp` from GitHub with no/blocked network | ensure network access for the first run; raise `--timeout`; pre-warm with `uvx --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help` |
-| `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` (`curl -LsSf https://astral.sh/uv/install.sh \| sh`) |
+| `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide: https://docs.astral.sh/uv/getting-started/installation/ |
 | `missing_core_tools` non-empty | the resolved `spedas_mcp` version changed its tool surface | confirm the `spedas_mcp` HEAD; pin a known-good ref (see dependencies doc) |
 | Claude Code does not see the slash commands/skill | plugin dir not enabled, or resources not at the plugin root | re-enable the plugin dir; run `validate_plugin.py` to confirm layout |
 

@@ -1,5 +1,14 @@
 # PySPEDAS patterns
 
+> **These recipes need a local PySPEDAS install the plugin does not provide.**
+> PySPEDAS and `pytplot` are *not* installed by `spedas_claude` and are *not*
+> available in Claude's MCP tool runtime. Run them in your own Python environment
+> after `pip install pyspedas` (or `uv pip install pyspedas`). A
+> `ModuleNotFoundError: No module named 'pyspedas'` means PySPEDAS is missing from
+> *that* environment — it is not a plugin bug. The MCP tool layer (see the rest of
+> this skill folder) is the part this plugin wires up and needs no Python env of
+> your own. See the README's "Architecture: two independent layers" section.
+
 ## Safe loading pattern
 
 - Use a narrow `trange` first.
