@@ -48,6 +48,22 @@ from `.mcp.json`.
 > from `main` gets you everything below at version `0.1.0`.
 
 ### Added
+- Analysis-workflow guidance (Batch H, #41/#42/#43/#44), wrapper-only — no MCP compute
+  added here:
+  - `skills/spedas-workflow/reference/analysis-recipes.md` — science question →
+    pyspedas function → MCP tool chain, with data-preparation and particle-analysis
+    subsections (#41).
+  - `commands/analyze.md` — `/analyze` guided analysis-tool selection by science
+    question, with YAML frontmatter + `$ARGUMENTS` (#42).
+  - `skills/spedas-workflow/reference/mission-loaders.md` — mission/instrument →
+    canonical CDAWeb dataset-ID cheatsheet + `fetch_data_product` patterns and
+    dataset-discovery steps (#43).
+  - Canonical event workflows
+    `skills/spedas-workflow/reference/{mms-magnetopause,themis-substorm,rbsp-radiation-belt}-workflow.md`
+    — plan → fetch → analyze → plot with sanity checks (#44).
+  - The analysis/transformation/plotting MCP tools these reference are **proposed** on
+    `spedas_mcp` (#12–#22) and tagged `[proposed]`; the docs give PySPEDAS fallbacks and
+    do not claim unreleased tools are available.
 - Repository governance scaffolding: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
   `SECURITY.md`, GitHub issue/PR templates, and this changelog (#19).
 - `maintainer` contact in `.claude-plugin/plugin.json` (#19).
