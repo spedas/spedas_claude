@@ -153,8 +153,24 @@ def validate_commands(commands_dir: Path) -> None:
         if "spice" not in gtext and "geometry" not in gtext:
             fail("commands/geometry.md should describe SPICE/geometry usage")
     for cf in cmd_files:
+        rel = cf.relative_to(ROOT).as_posix()
         if cf.stat().st_size == 0:
-            fail(f"empty command file: {cf.relative_to(ROOT).as_posix()}")
+            fail(f"empty command file: {rel}")
+            continue
+        # Issue #11: every command must carry YAML frontmatter (so it surfaces a
+        # description in Claude Code) and reference $ARGUMENTS (so user-supplied
+        # parameters are actually injected into the prompt). A plain-Markdown
+        # command silently drops invocation arguments, defeating the slash command.
+        text = cf.read_text(encoding="utf-8")
+        if not text.lstrip().startswith("---"):
+            fail(f"command missing YAML frontmatter (--- header): {rel}")
+        else:
+            parts = text.split("---", 2)
+            front = parts[1] if len(parts) >= 3 else ""
+            if "description:" not in front:
+                fail(f"command frontmatter missing 'description:' field: {rel}")
+        if "$ARGUMENTS" not in text:
+            fail(f"command does not reference $ARGUMENTS for argument substitution: {rel}")
 
 
 def validate_hooks(hooks_value) -> None:

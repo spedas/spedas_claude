@@ -41,6 +41,9 @@ explicitly want local Python/tplot workflows.
 - `.mcp.json` — starts the `spedas` MCP server from `spedas/spedas_mcp` via `uvx`.
 - `skills/spedas-workflow/SKILL.md` — scientific workflow guidance for agents.
 - `commands/` — Claude Code command prompts: `overview`, `data`, `workflow`, `geometry`.
+  Each carries YAML frontmatter (`description`, `argument-hint`) and substitutes
+  invocation arguments via `$ARGUMENTS`, so you can call them parameterized, e.g.
+  `/geometry PSP HCI 2024-06-25` or `/data cdaweb mms1_fgm_srvy_l2`.
 - `hooks/hooks.json` — placeholder for future safety/provenance hooks.
 - `scripts/validate_plugin.py` — offline packaging validator (run in CI).
 - `scripts/smoke_mcp_runtime.py` — real stdio MCP runtime smoke (verifies tool groups).

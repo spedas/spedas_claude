@@ -128,6 +128,28 @@ def main() -> int:
         (p / "templates" / "provenance" / "request.json").write_text("{ not valid json ")
         expect_fail(p, "malformed provenance JSON template", "request.json")
 
+        # 12) Issue #11: a command file without YAML frontmatter must fail
+        #     (the description never surfaces in Claude Code).
+        p = copy_plugin(base / "c12")
+        cmd = p / "commands" / "overview.md"
+        text = cmd.read_text()
+        body = text.split("---", 2)[2] if text.lstrip().startswith("---") else text
+        cmd.write_text(body.lstrip())
+        expect_fail(p, "command missing frontmatter", "YAML frontmatter")
+
+        # 13) Issue #11: frontmatter present but no description: field must fail.
+        p = copy_plugin(base / "c13")
+        cmd = p / "commands" / "workflow.md"
+        cmd.write_text(cmd.read_text().replace("description:", "summary:", 1))
+        expect_fail(p, "command frontmatter missing description", "description:")
+
+        # 14) Issue #11: a command that never references $ARGUMENTS must fail,
+        #     because user-supplied parameters would silently be dropped.
+        p = copy_plugin(base / "c14")
+        cmd = p / "commands" / "data.md"
+        cmd.write_text(cmd.read_text().replace("$ARGUMENTS", "the request"))
+        expect_fail(p, "command missing $ARGUMENTS", "$ARGUMENTS")
+
     print("\nAll validator tests passed.")
     return 0
 
