@@ -92,6 +92,21 @@ and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 - `reference/artifact-provenance.md` — what to save for reproducible science (templates in `templates/provenance/`).
 - `reference/troubleshooting.md` — failure taxonomy runbook: per-class signals, triage tree, issue routing.
 - `reference/science-examples.md` — starter prompts for MMS, Juno, PSP, THEMIS, and upstream solar wind.
+- `reference/analysis-recipes.md` — science question → pyspedas function → MCP tool chain, with data-preparation and particle-analysis subsections (current vs. proposed analysis-layer tools).
+- `reference/mission-loaders.md` — mission → instruments → canonical CDAWeb dataset IDs → `fetch_data_product` patterns, with dataset-discovery steps (MMS, THEMIS, PSP, Wind/ACE, OMNI, RBSP, …).
+- `reference/mms-magnetopause-workflow.md` — canonical MMS magnetopause event: plan → fetch → analyze (LMN/MVA, moments) → plot, with sanity checks.
+- `reference/themis-substorm-workflow.md` — canonical THEMIS substorm event: ground + probe plan → fetch → Pi2/dipolarization analysis → plot.
+- `reference/rbsp-radiation-belt-workflow.md` — canonical RBSP radiation-belt event: plan → fetch → L-shell/spectra → plot.
+
+## Analysis-layer tool maturity
+
+Beyond the 26 current MCP tools (discovery, planning, fetch, geometry), the
+analysis/transformation/plotting layer is **proposed** on `spedas_mcp` (issues
+#12–#22) and may not be released yet. The recipe/workflow references above tag these
+`[proposed: spedas_mcp #NN]`. **Confirm a proposed tool is live** (via
+`spedas_overview` / the active tool list) before presenting it as runnable; otherwise
+use the PySPEDAS fallback (`reference/pyspedas-patterns.md`) and say so. The
+`/spedas-analyze` command (`commands/analyze.md`) walks this selection interactively.
 
 Repo-level docs (outside this skill folder): `docs/configuration.md` (env/cache
 variables), `docs/safety.md` (fetch/kernel boundary + opt-in), `docs/dependencies.md`

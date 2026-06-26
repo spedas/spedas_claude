@@ -40,16 +40,23 @@ explicitly want local Python/tplot workflows.
 - `.claude-plugin/plugin.json` — plugin metadata and resource declarations.
 - `.mcp.json` — starts the `spedas` MCP server from `spedas/spedas_mcp` via `uvx`.
 - `skills/spedas-workflow/SKILL.md` — scientific workflow guidance for agents.
-- `commands/` — Claude Code command prompts: `overview`, `data`, `workflow`, `geometry`.
-  Each carries YAML frontmatter (`description`, `argument-hint`) and substitutes
+- `commands/` — Claude Code command prompts: `overview`, `data`, `workflow`, `geometry`,
+  `analyze`. Each carries YAML frontmatter (`description`, `argument-hint`) and substitutes
   invocation arguments via `$ARGUMENTS`, so you can call them parameterized, e.g.
-  `/geometry PSP HCI 2024-06-25` or `/data cdaweb mms1_fgm_srvy_l2`.
+  `/geometry PSP HCI 2024-06-25` or `/data cdaweb mms1_fgm_srvy_l2`. `/analyze` gives a
+  guided analysis-tool selection from a science question (drives the analysis-recipe
+  reference).
 - `hooks/hooks.json` — placeholder for future safety/provenance hooks.
 - `scripts/validate_plugin.py` — offline packaging validator (run in CI).
 - `scripts/smoke_mcp_runtime.py` — real stdio MCP runtime smoke (verifies tool groups).
 - `scripts/test_smoke_groups.py` — offline self-tests for the smoke's tool-group check.
 - `skills/spedas-workflow/reference/` — per-tool examples, geometry/SPICE, and
-  unified-vs-backend guides.
+  unified-vs-backend guides, plus analysis guidance: `analysis-recipes.md` (science
+  question → function → MCP tool chain), `mission-loaders.md` (mission/instrument →
+  dataset-ID cheatsheet), and canonical event workflows (`mms-magnetopause-`,
+  `themis-substorm-`, `rbsp-radiation-belt-workflow.md`). The analysis/plotting MCP
+  tools these reference are **proposed** on `spedas_mcp` (#12–#22) and tagged
+  `[proposed]` until released — confirm availability or use the PySPEDAS fallback.
 
 ## Requirements
 
