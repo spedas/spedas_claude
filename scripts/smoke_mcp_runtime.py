@@ -196,8 +196,9 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
     )
     assert proc.stdin is not None and proc.stdout is not None
     try:
-        # protocolVersion sourced from the mcp library when available, else
-        # omitted so the server negotiates — never a stale hardcoded constant (#25).
+        # Shared helper always supplies protocolVersion from env, the MCP
+        # library constant, or its documented fallback; never duplicate a
+        # per-script protocol literal here (#25).
         init = mcp_client.initialize_params("spedas-plugin-runtime-smoke")
         await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 1, "initialize", init), timeout)
         await mcp_client.send_message(proc.stdin, {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
