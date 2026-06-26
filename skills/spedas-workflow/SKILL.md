@@ -34,7 +34,12 @@ Think in four layers:
 - Discovery and mental model: `spedas_overview`.
 - Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
 - Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
-- Treat source-specific CDAWeb/PDS/SPICE tools as compatibility or maintenance surfaces unless the user asks for low-level backend behavior.
+- Geometry/SPICE: `list_spice_missions`, `list_coordinate_frames`, `get_ephemeris`, `compute_distance`, `transform_coordinates`, `manage_spice_kernels`. Geometry is its own tool family — route SPICE positions/frames here, not through `fetch_data_product`.
+- Treat source-specific CDAWeb/PDS tools (`browse_observatories`, `fetch_data`, `browse_pds_missions`, `fetch_pds_data`, …) as compatibility or maintenance surfaces unless the user asks for low-level backend behavior.
+
+For concrete arguments, return-shape notes, and no-fetch caveats for every tool,
+see `reference/tool-examples.md`, `reference/geometry-spice.md`, and
+`reference/backend-compatibility.md`.
 
 ## PySPEDAS package workflow
 
@@ -65,6 +70,9 @@ When something fails, label it precisely:
 
 ## References in this skill folder
 
+- `reference/tool-examples.md` — concrete arguments, return shapes, and no-fetch caveats for the unified workflow + data tools.
+- `reference/geometry-spice.md` — the six geometry/SPICE tools, safe examples, and the metadata-vs-kernel-download line.
+- `reference/backend-compatibility.md` — unified facade vs. CDAWeb/PDS backend tools, with a name map and decision criteria.
 - `reference/mcp-quickstart.md` — Claude plugin smoke, local wrapper validation, and first user checks.
 - `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
 - `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.

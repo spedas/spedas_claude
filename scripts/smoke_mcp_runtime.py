@@ -20,6 +20,57 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Tool groups, aligned with the reference docs under
+# skills/spedas-workflow/reference/. The smoke verifies that each advertised
+# group is actually present at runtime, not just that the total tool count
+# matches. This catches a backend that silently drops the geometry/SPICE family
+# or the unified facade while still exposing "enough" tools to pass a count
+# check. See tool-examples.md, geometry-spice.md, backend-compatibility.md.
+TOOL_GROUPS: dict[str, list[str]] = {
+    # Science workflow / planning layer (no backend equivalents).
+    "workflow": [
+        "spedas_overview",
+        "search_spedas_data_sources",
+        "plan_spedas_observation",
+        "compare_cdaweb_pds_spice",
+        "create_spedas_analysis_bundle",
+    ],
+    # Unified public facade: source_type-parameterized data layer.
+    "unified_data": [
+        "browse_data_sources",
+        "load_data_source",
+        "browse_data_parameters",
+        "fetch_data_product",
+        "manage_data_cache",
+    ],
+    # Dedicated geometry/SPICE tools (#7/#8): metadata + gated kernel surface.
+    "geometry_spice": [
+        "list_spice_missions",
+        "get_ephemeris",
+        "compute_distance",
+        "transform_coordinates",
+        "list_coordinate_frames",
+        "manage_spice_kernels",
+    ],
+    # Backend compatibility/maintenance tools (#18): CDAWeb + PDS.
+    "backend_cdaweb": [
+        "browse_observatories",
+        "load_observatory",
+        "browse_parameters",
+        "fetch_data",
+        "manage_cdaweb_cache",
+    ],
+    "backend_pds": [
+        "browse_pds_missions",
+        "load_pds_mission",
+        "browse_pds_parameters",
+        "fetch_pds_data",
+        "manage_pds_cache",
+    ],
+}
+
+# Core tools that must always be present (the unified facade + workflow layer).
+# Kept as a named constant for backward-compatible JSON output.
 EXPECTED_CORE_TOOLS = [
     "spedas_overview",
     "browse_data_sources",
@@ -32,6 +83,20 @@ EXPECTED_CORE_TOOLS = [
     "compare_cdaweb_pds_spice",
     "create_spedas_analysis_bundle",
 ]
+
+
+def _check_groups(tools: list[str]) -> dict[str, dict[str, Any]]:
+    """For each advertised tool group, report which members are present/missing."""
+    present = set(tools)
+    report: dict[str, dict[str, Any]] = {}
+    for group, members in TOOL_GROUPS.items():
+        missing = [name for name in members if name not in present]
+        report[group] = {
+            "expected": members,
+            "missing": missing,
+            "ok": not missing,
+        }
+    return report
 
 
 
@@ -188,6 +253,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", help="print machine-readable JSON")
     parser.add_argument("--timeout", type=float, default=180.0, help="per-request timeout in seconds")
+    parser.add_argument(
+        "--skip-group-check",
+        action="store_true",
+        help="only verify core tools, not the geometry/SPICE and unified-vs-backend tool groups",
+    )
     args = parser.parse_args()
 
     server = _load_server_config()
@@ -197,12 +267,20 @@ def main() -> int:
         tools = asyncio.run(_smoke(command, command_args, env, args.timeout))
 
     missing = [name for name in EXPECTED_CORE_TOOLS if name not in tools]
+    groups = _check_groups(tools)
+    missing_groups = [name for name, info in groups.items() if not info["ok"]]
+    groups_ok = args.skip_group_check or not missing_groups
+    ok = not missing and groups_ok
+
     payload = {
-        "ok": not missing,
+        "ok": ok,
         "tool_count": len(tools),
         "tools": tools,
         "expected_core_tools": EXPECTED_CORE_TOOLS,
         "missing_core_tools": missing,
+        "tool_groups": groups,
+        "missing_groups": missing_groups,
+        "group_check_enforced": not args.skip_group_check,
         "command": [command, *command_args],
         "note": "initialize + tools/list only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
     }
@@ -211,8 +289,13 @@ def main() -> int:
     else:
         print(f"SPEDAS plugin MCP runtime smoke: {'OK' if payload['ok'] else 'FAIL'}")
         print(f"tool_count: {payload['tool_count']}")
+        for name, info in groups.items():
+            status = "ok" if info["ok"] else "MISSING " + ",".join(info["missing"])
+            print(f"  group {name}: {status}")
         if missing:
             print("missing core tools: " + ", ".join(missing), file=sys.stderr)
+        if missing_groups and not args.skip_group_check:
+            print("incomplete tool groups: " + ", ".join(missing_groups), file=sys.stderr)
     return 0 if payload["ok"] else 1
 
 

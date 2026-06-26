@@ -9,3 +9,8 @@ Use unified data-layer tools:
 5. `manage_data_cache(source_type, ...)` for cache inspection or cleanup.
 
 Keep fetches narrow. Return artifact paths and provenance, not large raw arrays.
+
+Concrete arguments, return shapes, and no-fetch caveats for each tool are in
+`skills/spedas-workflow/reference/tool-examples.md`. For when to drop from these
+unified tools to source-specific CDAWeb/PDS tools, see
+`skills/spedas-workflow/reference/backend-compatibility.md`.
