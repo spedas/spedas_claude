@@ -1,6 +1,6 @@
 ---
 description: Summarize the SPEDAS MCP layers and recommend the next tools for a science question.
-argument-hint: [free-text science question]
+argument-hint: "[free-text science question]"
 ---
 
 # SPEDAS overview

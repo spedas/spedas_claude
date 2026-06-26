@@ -1,6 +1,6 @@
 ---
 description: Plan a SPEDAS science workflow (sources, target/interval, archive choice, reusable bundle).
-argument-hint: [target] [interval] [science goal]
+argument-hint: "[target] [interval] [science goal]"
 ---
 
 # SPEDAS science workflow

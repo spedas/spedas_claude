@@ -1,6 +1,6 @@
 ---
 description: Run the SPEDAS unified data-layer workflow (browse/load/inspect; opt-in fetch).
-argument-hint: [source_type] [source_id/dataset_id] [parameters] [interval]
+argument-hint: "[source_type] [source_id/dataset_id] [parameters] [interval]"
 ---
 
 # SPEDAS data-layer workflow

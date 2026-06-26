@@ -1,6 +1,6 @@
 ---
 description: Run the SPEDAS geometry/SPICE workflow (positions, distances, frame transforms).
-argument-hint: [target] [frame] [time]
+argument-hint: "[target] [frame] [time]"
 ---
 
 # SPEDAS geometry / SPICE workflow
