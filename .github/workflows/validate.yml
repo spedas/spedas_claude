@@ -18,5 +18,7 @@ jobs:
         run: python scripts/validate_plugin.py
       - name: Validator self-tests (negative cases)
         run: python scripts/test_validate_plugin.py
-      - name: Runtime smoke MCP server
+      - name: Smoke tool-group self-tests (offline)
+        run: python scripts/test_smoke_groups.py
+      - name: Runtime smoke MCP server (verifies tool groups)
         run: python scripts/smoke_mcp_runtime.py --json --timeout 300

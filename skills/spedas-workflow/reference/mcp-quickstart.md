@@ -17,10 +17,22 @@ From the `spedas_claude` repository, run the offline package checks and the safe
 ```bash
 python3 scripts/validate_plugin.py
 python3 scripts/test_validate_plugin.py
+python3 scripts/test_smoke_groups.py
 python3 scripts/smoke_mcp_runtime.py --json --timeout 240
 ```
 
-Expected: validation exits 0, the negative-case validator tests pass, and the runtime smoke returns JSON with `ok: true`, `tool_count: 26`, and no missing core tools. The runtime smoke starts the same `uvx ... spedas-mcp` command declared in `.mcp.json` and performs MCP initialize + tools/list without fetching mission data or downloading SPICE kernels.
+Expected: validation exits 0, the negative-case validator tests pass, the offline
+tool-group self-tests pass, and the runtime smoke returns JSON with `ok: true`,
+`tool_count: 26`, no missing core tools, and `missing_groups: []`. The runtime
+smoke starts the same `uvx ... spedas-mcp` command declared in `.mcp.json` and
+performs MCP initialize + tools/list — verifying the workflow, unified-data,
+geometry/SPICE, and CDAWeb/PDS backend tool groups are all present — without
+fetching mission data or downloading SPICE kernels.
+
+For concrete per-tool arguments and return shapes, see
+[`tool-examples.md`](tool-examples.md),
+[`geometry-spice.md`](geometry-spice.md), and
+[`backend-compatibility.md`](backend-compatibility.md).
 
 ## Safe first question
 

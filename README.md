@@ -18,7 +18,10 @@ Claude Code -> spedas_claude plugin -> spedas MCP server -> CDAWeb / PDS / SPICE
 - `commands/` — Claude Code command prompts: `overview`, `data`, `workflow`, `geometry`.
 - `hooks/hooks.json` — placeholder for future safety/provenance hooks.
 - `scripts/validate_plugin.py` — offline packaging validator (run in CI).
-- `scripts/smoke_mcp_runtime.py` — real stdio MCP runtime smoke.
+- `scripts/smoke_mcp_runtime.py` — real stdio MCP runtime smoke (verifies tool groups).
+- `scripts/test_smoke_groups.py` — offline self-tests for the smoke's tool-group check.
+- `skills/spedas-workflow/reference/` — per-tool examples, geometry/SPICE, and
+  unified-vs-backend guides.
 
 ## Requirements
 
@@ -70,21 +73,32 @@ python scripts/smoke_mcp_runtime.py --json
 ```
 
 This starts the configured `spedas` stdio MCP server via `uvx`, performs
-`initialize` + `tools/list`, and verifies the core SPEDAS tools are present. It
-uses **no** private credentials, interactive UI, data fetch, or SPICE kernel
+`initialize` + `tools/list`, and verifies both the core SPEDAS tools **and** the
+advertised tool groups (workflow, unified data layer, geometry/SPICE, CDAWeb and
+PDS backends) are present — not just that the count is high enough. It uses
+**no** private credentials, interactive UI, data fetch, or SPICE kernel
 download, and isolates caches in a temp directory. The first run can be slow
 because `uvx` resolves `spedas_mcp` from GitHub.
 
-Expected success (`ok: true`, non-zero `tool_count`, empty `missing_core_tools`):
+Expected success (`ok: true`, `tool_count: 26`, empty `missing_core_tools`, empty
+`missing_groups`):
 
 ```json
 {
   "ok": true,
-  "tool_count": 20,
+  "tool_count": 26,
   "missing_core_tools": [],
+  "missing_groups": [],
   ...
 }
 ```
+
+Pass `--skip-group-check` to verify only the core tools (e.g. while a backend is
+mid-migration). For copy-ready tool arguments and return shapes, see the skill
+reference docs:
+[`tool-examples.md`](skills/spedas-workflow/reference/tool-examples.md),
+[`geometry-spice.md`](skills/spedas-workflow/reference/geometry-spice.md), and
+[`backend-compatibility.md`](skills/spedas-workflow/reference/backend-compatibility.md).
 
 ### 4. Use it from Claude Code
 
@@ -167,6 +181,7 @@ source/HEAD and the exact pinning recipe, and the caveat about which ref to pin.
 ```bash
 python scripts/validate_plugin.py        # offline packaging validation
 python scripts/test_validate_plugin.py   # validator self-tests (negative cases)
+python scripts/test_smoke_groups.py      # offline tool-group check self-tests
 python scripts/smoke_mcp_runtime.py --json  # real MCP runtime smoke (needs uvx + first-run network)
 ```
 
