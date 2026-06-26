@@ -117,8 +117,9 @@ This starts the configured `spedas` stdio MCP server via `uvx`, performs
 advertised tool groups (workflow, unified data layer, geometry/SPICE, CDAWeb and
 PDS backends) are present — not just that the count is high enough. It uses
 **no** private credentials, interactive UI, data fetch, or SPICE kernel
-download, and isolates caches in a temp directory. The first run can be slow
-because `uvx` resolves `spedas_mcp` from GitHub.
+download, and isolates SPEDAS data/kernel caches in a temp directory. It still
+uses your normal `uv` build cache unless you set `UV_CACHE_DIR` yourself; the
+first run can be slow because `uvx` resolves `spedas_mcp` from GitHub.
 
 Expected success (`ok: true`, `tool_count: 26`, empty `missing_core_tools`, empty
 `missing_groups`):
@@ -139,6 +140,18 @@ reference docs:
 [`tool-examples.md`](skills/spedas-workflow/reference/tool-examples.md),
 [`geometry-spice.md`](skills/spedas-workflow/reference/geometry-spice.md), and
 [`backend-compatibility.md`](skills/spedas-workflow/reference/backend-compatibility.md).
+
+To go one step further and actually *call* a workflow tool (not just list the
+surface), run the example in [`examples/run_overview.py`](examples/run_overview.py).
+It starts the same server and calls the read-only `spedas_overview` planning
+tool — no credentials, no data fetch, SPEDAS data/kernel caches isolated — so
+you can confirm the plugin works end to end and adapt it. The example still uses
+your normal `uv` build cache unless you set `UV_CACHE_DIR` yourself:
+
+```bash
+python examples/run_overview.py            # human-readable summary
+python examples/run_overview.py --json      # raw tool result
+```
 
 ### 4. Use it from Claude Code
 

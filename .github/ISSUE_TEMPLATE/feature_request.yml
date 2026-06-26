@@ -1,0 +1,28 @@
+name: Feature request (plugin wrapper)
+description: Suggest an improvement to the spedas-claude plugin wrapper (commands, skills, docs, packaging, CI).
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Scope:** this tracker covers the plugin wrapper. Requests for new
+        *science* tools or data sources belong in
+        [spedas/spedas_mcp](https://github.com/spedas/spedas_mcp/issues).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: The use case or pain point, not just the proposed solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: What you'd like to see in the wrapper (a command, skill, doc, CI step, …).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

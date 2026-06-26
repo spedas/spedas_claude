@@ -4,8 +4,53 @@ on:
   push:
   pull_request:
 
+# Issue #16: a force-push or rapid re-push should not queue redundant runs on the
+# shared org runners. Cancel any in-flight run for the same ref when a new commit
+# arrives. The default branch is excluded from cancellation so a merge to main
+# always completes.
+concurrency:
+  group: validate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
 jobs:
-  validate:
+  # Cross-platform job (issue #16): the wrapper validators and the offline
+  # self-tests are pure-Python and have no scientific dependencies, so they run
+  # cheaply on every OS/Python combination. This is where Windows/macOS path and
+  # frontmatter regressions get caught — the things smoke_mcp_runtime.py was
+  # written to be portable for but was previously only ever exercised on Linux.
+  #
+  # The runtime MCP smoke is deliberately NOT in this matrix: it resolves and
+  # builds the full scientific stack from spedas_mcp git HEAD (2-5 min), which is
+  # slow and brittle to run three times per OS. It runs once on Linux in the
+  # `smoke` job below. Once spedas_mcp is pinned (see CHANGELOG compatibility
+  # note), an actions/cache step keyed on the resolved dependency set can be
+  # added and the smoke can be widened safely.
+  wrapper:
+    name: wrapper (${{ matrix.os }} / py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Validate plugin wrapper (offline packaging)
+        run: python scripts/validate_plugin.py
+      - name: Validator self-tests (negative cases)
+        run: python scripts/test_validate_plugin.py
+      - name: Smoke tool-group self-tests (offline)
+        run: python scripts/test_smoke_groups.py
+
+  # Runtime smoke (issue #16): launches the real spedas-mcp server and verifies
+  # the tool groups. Linux-only and tightly bounded so a hung handshake or a
+  # broken upstream main cannot consume the whole job timeout.
+  smoke:
+    name: runtime smoke (ubuntu / py3.11)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -14,11 +59,9 @@ jobs:
         with:
           python-version: '3.11'
       - uses: astral-sh/setup-uv@v5
-      - name: Validate plugin wrapper (offline packaging)
-        run: python scripts/validate_plugin.py
-      - name: Validator self-tests (negative cases)
-        run: python scripts/test_validate_plugin.py
-      - name: Smoke tool-group self-tests (offline)
-        run: python scripts/test_smoke_groups.py
       - name: Runtime smoke MCP server (verifies tool groups)
+        # Step-level timeout (issue #16): the script's own --timeout 300 bounds the
+        # MCP handshake; this is a hard backstop so a wedged subprocess can never
+        # hang the runner indefinitely.
+        timeout-minutes: 8
         run: python scripts/smoke_mcp_runtime.py --json --timeout 300

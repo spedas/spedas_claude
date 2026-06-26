@@ -1,0 +1,55 @@
+name: Bug report (plugin wrapper)
+description: Report a problem with the spedas-claude plugin wrapper (loading, commands, skills, MCP wiring, CI/packaging).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This tracker is for the plugin wrapper.** If a `spedas_*` MCP tool
+        returns wrong data or crashes, that is the science server —
+        [file it at spedas/spedas_mcp](https://github.com/spedas/spedas_mcp/issues).
+        For security issues, see [SECURITY.md](../SECURITY.md). A
+        `ModuleNotFoundError: pyspedas` is expected (this plugin does not install
+        PySPEDAS) — see the README "two layers" section.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: affected
+    attributes:
+      label: Affected component / tool
+      description: e.g. plugin load, a slash command, a skill, `.mcp.json`, a specific MCP tool name, CI.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. Include the exact command or prompt.
+      placeholder: |
+        1. Installed the plugin via …
+        2. Ran / asked …
+        3. Saw …
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Plugin version (from `.claude-plugin/plugin.json`), OS, Python, and `uv` versions.
+      placeholder: |
+        spedas-claude: 0.1.0
+        OS: macOS 14.4 / Windows 11 / Ubuntu 24.04
+        Python: 3.12.3
+        uv: 0.5.x
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      render: shell
