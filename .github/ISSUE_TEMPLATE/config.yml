@@ -1,0 +1,17 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Science tool / data problem (spedas_mcp)
+    url: https://github.com/spedas/spedas_mcp/issues
+    about: >-
+      If a spedas_* MCP tool returns wrong data, crashes, or is missing, the
+      problem is in the science server, not this wrapper. File it there.
+  - name: Security vulnerability
+    url: https://github.com/spedas/spedas_claude/security/advisories/new
+    about: >-
+      Do not open a public issue for security problems. Use private
+      vulnerability reporting (see SECURITY.md).
+  - name: Question / usage help
+    url: https://github.com/spedas/spedas_claude/discussions
+    about: >-
+      For "how do I…" questions and PySPEDAS-environment help, prefer
+      Discussions over an issue.

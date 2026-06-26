@@ -140,6 +140,17 @@ reference docs:
 [`geometry-spice.md`](skills/spedas-workflow/reference/geometry-spice.md), and
 [`backend-compatibility.md`](skills/spedas-workflow/reference/backend-compatibility.md).
 
+To go one step further and actually *call* a workflow tool (not just list the
+surface), run the example in [`examples/run_overview.py`](examples/run_overview.py).
+It starts the same server and calls the read-only `spedas_overview` planning
+tool — no credentials, no data fetch, caches isolated — so you can confirm the
+plugin works end to end and adapt it:
+
+```bash
+python examples/run_overview.py            # human-readable summary
+python examples/run_overview.py --json      # raw tool result
+```
+
 ### 4. Use it from Claude Code
 
 Enable the plugin (point Claude Code at this directory as a plugin dir), then try:
