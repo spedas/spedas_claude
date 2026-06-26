@@ -7,13 +7,16 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - uses: astral-sh/setup-uv@v5
-      - name: Validate plugin wrapper
+      - name: Validate plugin wrapper (offline packaging)
         run: python scripts/validate_plugin.py
+      - name: Validator self-tests (negative cases)
+        run: python scripts/test_validate_plugin.py
       - name: Runtime smoke MCP server
-        run: python scripts/smoke_mcp_runtime.py --json
+        run: python scripts/smoke_mcp_runtime.py --json --timeout 300
