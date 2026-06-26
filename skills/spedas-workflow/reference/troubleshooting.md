@@ -45,7 +45,7 @@ science tool runs.
 | Signal | Likely cause | Fix |
 |---|---|---|
 | `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide (https://docs.astral.sh/uv/getting-started/installation/); reopen shell |
-| Smoke hangs/times out on first run | `uvx` resolving `spedas_mcp` from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help`) |
+| Smoke hangs/times out on first run | `uvx` resolving `spedas_mcp` from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with mcp>=1.26.0 --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help`, matching `.mcp.json`) |
 | `Failed to spawn` / `Permission denied` writing cache or temp | `UV_CACHE_DIR` / `XDG_CACHE_HOME` / `TMPDIR` or a cache dir is read-only / over quota | point them at a writable path ([`configuration.md`](../../../docs/configuration.md)); the smoke auto-falls-back, real runs do not |
 | `No solution found` / cannot resolve `spedas_mcp` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
 | `missing_core_tools` non-empty in the smoke | resolved `spedas_mcp` HEAD changed its tool surface | confirm/pin a known-good `spedas_mcp` ref ([`dependencies.md`](../../../docs/dependencies.md)) |
@@ -105,6 +105,9 @@ Transient network/archive conditions.
 
 **Attach (only if it recurs and looks systemic):** timestamps, the request, and the
 HTTP status. Otherwise this is operational, not a bug.
+**File at:** the relevant archive (CDAWeb/PDS/NAIF) if an outage/limit is systemic;
+or https://github.com/spedas/spedas_mcp/issues if the limit *handling itself* (retry,
+backoff, error shape) looks wrong.
 
 ## E. Docs / skills gap → file in `spedas_claude` (or `spedas_mcp`)
 

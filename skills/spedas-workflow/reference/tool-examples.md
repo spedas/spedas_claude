@@ -133,10 +133,9 @@ browse_data_parameters(
   source_type="cdaweb",
   dataset_id="MMS1_FGM_SRVY_L2"
 )
-// or several datasets at once:
+// or several datasets at once (use dataset_ids instead of dataset_id):
 browse_data_parameters(
   source_type="cdaweb",
-  dataset_id="MMS1_FGM_SRVY_L2",
   dataset_ids=["MMS1_FGM_SRVY_L2", "MMS1_FPI_FAST_L2_DIS-MOMS"]
 )
 ```

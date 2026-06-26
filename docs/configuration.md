@@ -41,6 +41,12 @@ an environment variable **or** as a server CLI flag in `.mcp.json`'s `args`.
 | PDS (PPI) cache root | `PDSMCP_CACHE_DIR` | `--pds-cache-dir` | `~/.pdsmcp/` |
 | SPICE kernel cache | `XHELIO_SPICE_KERNEL_DIR` | `--spice-kernel-dir` | `~/.xhelio_spice/kernels/` |
 
+> **The "Default if unset" column shows the bare upstream-tool defaults, which apply
+> only if you remove the corresponding env vars from the packaged `.mcp.json`.** Out
+> of the box those vars are set, so the packaged setup actually caches under
+> `${HOME}/.cache/spedas/...` (see the `.mcp.json` block below), **not** under
+> `~/.cdawebmcp/` / `~/.pdsmcp/` / `~/.xhelio_spice/kernels/`.
+
 The packaged [`.mcp.json`](../.mcp.json) sets all three under one tree:
 
 ```jsonc
@@ -56,7 +62,7 @@ Notes that matter for reproducibility:
 - The **CDAWeb backend bootstraps** bundled observatory + metadata files into its
   cache root on first access. Pointing `XHELIO_CDAWEB_CACHE_DIR` at a fresh empty
   directory is fine — it is populated automatically. A read-only cache root will
-  fail this bootstrap; see `reference/troubleshooting.md`.
+  fail this bootstrap; see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md).
 - A **resolution-order** subtlety: a CLI flag in `.mcp.json` `args` wins over the
   environment variable of the same purpose (the server reads
   `args.<flag> or os.environ.get(<VAR>)`). Pick one mechanism per directory.
@@ -87,7 +93,7 @@ this repo can guarantee**, the safe, portable approach on any OS is to set an
 To **verify** what the server actually resolved, run the runtime smoke and inspect
 the directories it reports / creates, or check that the cache directory fills after
 a real (opt-in) fetch. If the cache stays empty across runs, expansion or
-writability is the likely cause (see `reference/troubleshooting.md`).
+writability is the likely cause (see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md)).
 
 ## 3. Advanced: runtime / developer / debug knobs
 

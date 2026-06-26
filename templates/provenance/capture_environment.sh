@@ -17,6 +17,12 @@
 # It performs NO data fetch and NO SPICE kernel download. The only network call is
 # the optional `git ls-remote` to resolve the spedas_mcp commit; disable it with
 # SPEDAS_PROVENANCE_NO_NETWORK=1 for fully offline/air-gapped runs.
+#
+# Environment overrides:
+#   SPEDAS_MCP_REPO            override the upstream repo URL whose HEAD is resolved
+#                              (for forks/mirrors/air-gapped sources); defaults to the
+#                              official https://github.com/spedas/spedas_mcp.git
+#   SPEDAS_PROVENANCE_NO_NETWORK=1   skip the `git ls-remote` HEAD resolution
 set -u
 
 PYSPEDAS=0

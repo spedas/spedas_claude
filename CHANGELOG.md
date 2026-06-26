@@ -24,6 +24,15 @@ from `.mcp.json`.
 | spedas-claude | spedas_mcp source | MCP protocol floor |
 |---|---|---|
 | 0.1.0 | `git+https://github.com/spedas/spedas_mcp.git` (unpinned HEAD) | `mcp>=1.26.0` |
+| Unreleased | `git+https://github.com/spedas/spedas_mcp.git` (unpinned HEAD) | `mcp>=1.26.0` |
+
+> The `[Unreleased]` features below are already committed to `main` but **no version
+> boundary has been cut**: `.claude-plugin/plugin.json` still reads `0.1.0` and no git
+> tag exists yet (see *Deferred*). They carry the same dependency posture as `0.1.0`
+> — same `spedas_mcp` source and `mcp>=1.26.0` floor — so this row changes nothing
+> about reproducibility; it exists only so the unreleased work is not invisible in
+> this table. Cutting a real version (bumping `plugin.json` and tagging) is a
+> maintainer action.
 
 > **Stability note:** `spedas_mcp` is currently resolved from git `HEAD`, so the
 > exact tool set can change between installs. Pinning `spedas_mcp` to a tag or
@@ -32,6 +41,11 @@ from `.mcp.json`.
 > names and signatures as **subject to upstream change**.
 
 ## [Unreleased]
+
+> These features are **committed to `main` and present on disk today**, but a
+> release boundary is **deliberately deferred**: the version string stays `0.1.0`
+> and no tag is cut until maintainers choose a boundary (see *Deferred*). Installing
+> from `main` gets you everything below at version `0.1.0`.
 
 ### Added
 - Repository governance scaffolding: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
@@ -49,7 +63,7 @@ from `.mcp.json`.
 - No release tag or package publication has been cut yet; release execution stays
   manual until maintainers choose a version boundary (#19).
 
-## [0.1.0] - 2026
+## [0.1.0] - 2026-06-25
 
 Initial plugin wrapper: MCP wiring (`.mcp.json`), the `spedas-workflow` skill,
 slash commands, the offline `validate_plugin.py` packaging validator, and the

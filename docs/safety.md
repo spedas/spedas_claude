@@ -6,6 +6,12 @@ This document defines the safety boundary, the opt-in language to use, and what 
 do before enabling real fetches. It addresses issue #6 (fetch/kernel safety) and is
 the runbook the (currently intentional-empty) `hooks/hooks.json` plan refers to.
 
+> **Caveat:** the 26 tools and their fetch/kernel behavior live in the upstream
+> `spedas_mcp` server, which `.mcp.json` resolves from a **floating default branch
+> (unpinned)**. Upstream changes can alter what counts as a fetch/kernel tool, so
+> re-verify this boundary after `spedas_mcp` updates — and pin a known-good ref when
+> you need it fixed (see [`dependencies.md`](dependencies.md)).
+
 ## The boundary: discovery is safe, fetch is opt-in
 
 | Always safe (metadata/planning) | Opt-in (network, can be large) |
