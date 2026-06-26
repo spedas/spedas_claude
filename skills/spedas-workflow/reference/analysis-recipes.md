@@ -39,7 +39,7 @@ treat them as the *expected* names, not a guarantee.
 5. Run the **physical sanity checks** before trusting the result.
 6. Save artifacts + provenance (`artifact-provenance.md`); reply with paths, not arrays.
 
-The interactive form of this table is the `/spedas-analyze` command
+The interactive form of this table is the `/analyze` command
 ([`commands/analyze.md`](../../../commands/analyze.md)), which walks the same
 question → preprocessing → tool-chain → sanity-check flow and emits ready-to-run
 MCP calls.

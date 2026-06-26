@@ -106,7 +106,7 @@ analysis/transformation/plotting layer is **proposed** on `spedas_mcp` (issues
 `[proposed: spedas_mcp #NN]`. **Confirm a proposed tool is live** (via
 `spedas_overview` / the active tool list) before presenting it as runnable; otherwise
 use the PySPEDAS fallback (`reference/pyspedas-patterns.md`) and say so. The
-`/spedas-analyze` command (`commands/analyze.md`) walks this selection interactively.
+`/analyze` command (`commands/analyze.md`) walks this selection interactively.
 
 Repo-level docs (outside this skill folder): `docs/configuration.md` (env/cache
 variables), `docs/safety.md` (fetch/kernel boundary + opt-in), `docs/dependencies.md`
