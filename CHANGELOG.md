@@ -42,6 +42,13 @@ from `.mcp.json`.
 - CI hardening: cross-platform/Python validation matrix, `concurrency` control,
   and job/step `timeout-minutes` in `.github/workflows/validate.yml` (#16).
 
+### Deferred
+- `uv` dependency caching is intentionally deferred until `spedas_mcp` is pinned
+  to a tag or commit; caching an unpinned git-HEAD install could mask upstream
+  breakage that the runtime smoke is meant to catch (#16).
+- No release tag or package publication has been cut yet; release execution stays
+  manual until maintainers choose a version boundary (#19).
+
 ## [0.1.0] - 2026
 
 Initial plugin wrapper: MCP wiring (`.mcp.json`), the `spedas-workflow` skill,
