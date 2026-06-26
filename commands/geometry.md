@@ -22,6 +22,10 @@ then do the geometry you need. Separate geometry lookups from measurement-data
 fetches, and **avoid large kernel loads/downloads without confirming cache and scope** —
 keep `manage_spice_kernels(action="load"|"clean"|"purge")` explicit and narrowly scoped.
 
+SPICE kernels are often 100 MB–1+ GB each. Loading/downloading them is an
+**opt-in** action — confirm the cache directory and scope first. See the kernel
+safety boundary in [`docs/safety.md`](../docs/safety.md).
+
 For copy-ready argument examples, return-shape notes, and the
 metadata-vs-download distinction, see
 `skills/spedas-workflow/reference/geometry-spice.md`.

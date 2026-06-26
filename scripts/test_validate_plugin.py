@@ -96,6 +96,38 @@ def main() -> int:
         (p / "hooks" / "hooks.json").write_text(json.dumps({"hooks": "not-an-object"}))
         expect_fail(p, "malformed hooks", "hooks")
 
+        # 6) Batch C: a cross-referenced repo doc must exist (#5/#17 config doc).
+        p = copy_plugin(base / "c6")
+        (p / "docs" / "configuration.md").unlink()
+        expect_fail(p, "missing docs/configuration.md", "docs/configuration.md")
+
+        # 7) Batch C: the safety doc (#6) must exist.
+        p = copy_plugin(base / "c7")
+        (p / "docs" / "safety.md").unlink()
+        expect_fail(p, "missing docs/safety.md", "docs/safety.md")
+
+        # 8) Batch C: the troubleshooting runbook (#13) must exist.
+        p = copy_plugin(base / "c8")
+        (p / "skills" / "spedas-workflow" / "reference" / "troubleshooting.md").unlink()
+        expect_fail(p, "missing troubleshooting runbook", "troubleshooting.md")
+
+        # 9) Batch C: a provenance template (#14) must exist.
+        p = copy_plugin(base / "c9")
+        (p / "templates" / "provenance" / "request.json").unlink()
+        expect_fail(p, "missing provenance template", "templates/provenance/request.json")
+
+        # 10) Batch C: the opt-in hook example (#6) must exist so the
+        #     "enable it yourself" path documented in docs/safety.md is real.
+        p = copy_plugin(base / "c10")
+        (p / "hooks" / "examples" / "fetch_guard.py").unlink()
+        expect_fail(p, "missing opt-in hook example", "hooks/examples/fetch_guard.py")
+
+        # 11) Batch C: a malformed provenance JSON template must fail (a copy-paste
+        #     run must start from valid JSON).
+        p = copy_plugin(base / "c11")
+        (p / "templates" / "provenance" / "request.json").write_text("{ not valid json ")
+        expect_fail(p, "malformed provenance JSON template", "request.json")
+
     print("\nAll validator tests passed.")
     return 0
 

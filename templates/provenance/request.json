@@ -1,0 +1,22 @@
+{
+  "science_question": "FILL: one-sentence science target (e.g. characterize the MMS1 magnetopause crossing on 2015-10-16T13:06Z)",
+  "mission": "FILL: e.g. MMS1",
+  "source_type": "FILL: cdaweb | pds | spice",
+  "dataset_or_product_id": "FILL: e.g. MMS1_FGM_SRVY_L2",
+  "parameters": ["FILL: variable/parameter names"],
+  "time_range": ["FILL-start ISO8601", "FILL-stop ISO8601"],
+  "coordinate_frame": "FILL or null",
+  "success_criteria": "FILL: what result/figure answers the question",
+  "allowed_side_effects": {
+    "real_data_fetch": false,
+    "spice_kernel_download": false,
+    "opt_in_recorded": "FILL: who authorized any fetch, and when (leave defaults false for metadata/planning-only runs)"
+  },
+  "cache_roots": {
+    "cdaweb": "FILL or resolved XHELIO_CDAWEB_CACHE_DIR",
+    "pds": "FILL or resolved PDSMCP_CACHE_DIR",
+    "spice": "FILL or resolved XHELIO_SPICE_KERNEL_DIR"
+  },
+  "output_dir": "FILL: where artifacts are written",
+  "notes": "FILL or null"
+}

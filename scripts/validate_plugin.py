@@ -220,6 +220,64 @@ def validate_mcp(mcp_value) -> None:
         fail(f"{rel}: 'spedas' server env must be an object when present")
 
 
+def validate_batch_c_docs() -> None:
+    """Batch C (issues #5/#6/#9/#13/#14/#17): the cross-referenced docs, the
+    troubleshooting runbook, the provenance templates, and the opt-in hook example
+    must all exist. README/SKILL/safety link to these; a missing target is a broken
+    contract, so fail loudly the same way the skill reference-link check does.
+    """
+    # Repo docs cross-linked from README/SKILL/commands.
+    require("docs/configuration.md")          # #5 / #17 env + cache config
+    require("docs/safety.md")                 # #6 fetch/kernel boundary
+    require("skills/spedas-workflow/reference/troubleshooting.md")  # #13 runbook
+
+    # #6: opt-in hook example referenced by docs/safety.md and hooks/README.md.
+    # These must be present so the "enable it yourself" path is real, and the
+    # shipped hooks.json must remain the intentional empty placeholder (not an
+    # accidentally-active hook).
+    require("hooks/examples/pretooluse-fetch-guard.md")
+    require("hooks/examples/fetch_guard.py")
+
+    # #14: provenance template bundle (the five files + helper + README).
+    provenance = ROOT / "templates" / "provenance"
+    if not provenance.is_dir():
+        fail("missing required dir: templates/provenance (issue #14 provenance scaffolding)")
+        return
+    for name in (
+        "README.md",
+        "request.json",
+        "tool_calls.jsonl",
+        "capture_environment.sh",
+        "artifacts_manifest.json",
+        "provenance.md",
+    ):
+        require(f"templates/provenance/{name}")
+    # The two JSON templates must be well-formed JSON so a copy-paste run starts valid.
+    for jname in ("request.json", "artifacts_manifest.json"):
+        load_json(f"templates/provenance/{jname}")
+
+
+def validate_hooks_placeholder_intentional() -> None:
+    """#6: assert hooks/hooks.json is a *deliberate* empty placeholder OR a valid
+    hooks object — never a malformed/half-edited file. The structural check lives in
+    validate_hooks(); this records that an empty array is an accepted, documented
+    state (hooks/README.md explains why) rather than a regression.
+    """
+    p = ROOT / "hooks" / "hooks.json"
+    if not p.exists():
+        return  # absence handled by validate_hooks() / convention.
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except Exception:
+        return  # validate_hooks() already reports malformed JSON.
+    hooks = data.get("hooks")
+    # Empty list/dict = intentional placeholder (documented in hooks/README.md).
+    # Non-empty = an enabled hook config, which validate_hooks() structurally checks.
+    if hooks in ([], {}) and not (ROOT / "hooks" / "README.md").exists():
+        fail("hooks/hooks.json is an empty placeholder but hooks/README.md is missing; "
+             "document the intent (issue #6) so the empty array is not read as a regression")
+
+
 def validate_metadata(data: dict) -> None:
     if data.get("name") != "spedas-claude":
         fail("plugin.json: Claude plugin 'name' must be 'spedas-claude'")
@@ -264,6 +322,11 @@ def main() -> int:
 
     # Onboarding (#12) depends on the workflow skill existing.
     require("skills/spedas-workflow/SKILL.md")
+
+    # Batch C (#5/#6/#9/#13/#14/#17): cross-referenced docs, runbook, templates,
+    # and the opt-in hook example must resolve; hooks placeholder must be intentional.
+    validate_batch_c_docs()
+    validate_hooks_placeholder_intentional()
 
     if errors:
         for e in errors:

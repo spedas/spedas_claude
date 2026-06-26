@@ -43,6 +43,15 @@ see `reference/tool-examples.md`, `reference/geometry-spice.md`, and
 
 ## PySPEDAS package workflow
 
+> **PySPEDAS is a separate layer this plugin does not install.** The MCP tools
+> above run via `uvx` and need no Python environment of yours. PySPEDAS + `pytplot`
+> are a *local* Python package the **user** installs themselves (`pip install
+> pyspedas`); they are not provided by the plugin or by Claude's tool runtime. If a
+> PySPEDAS recipe raises `ModuleNotFoundError: No module named 'pyspedas'`, that is
+> a missing local install (classify it as an environment-scoping gap, **not** an MCP
+> wrapper bug) — see `reference/troubleshooting.md`. Confirm the user has a Python
+> env with PySPEDAS before suggesting these recipes.
+
 Use PySPEDAS directly when the user needs Python/tplot workflows, plotting, existing mission routines, or compatibility with SPEDAS notebooks/scripts.
 
 Minimum safe pattern:
@@ -68,6 +77,10 @@ When something fails, label it precisely:
 - **External service limit** — network, archive outage, timeout, HTTP 429, cold cache.
 - **Docs/skills gap** — the tool works but first-user instructions or scientific method are unclear.
 
+For per-class error signals, a triage decision tree, diagnostic commands, **which
+repo to file each class in** (`spedas_claude` vs `spedas_mcp` vs backend archives),
+and which provenance artifacts to attach, see `reference/troubleshooting.md`.
+
 ## References in this skill folder
 
 - `reference/tool-examples.md` — concrete arguments, return shapes, and no-fetch caveats for the unified workflow + data tools.
@@ -76,5 +89,10 @@ When something fails, label it precisely:
 - `reference/mcp-quickstart.md` — Claude plugin smoke, local wrapper validation, and first user checks.
 - `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
 - `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.
-- `reference/artifact-provenance.md` — what to save for reproducible science.
+- `reference/artifact-provenance.md` — what to save for reproducible science (templates in `templates/provenance/`).
+- `reference/troubleshooting.md` — failure taxonomy runbook: per-class signals, triage tree, issue routing.
 - `reference/science-examples.md` — starter prompts for MMS, Juno, PSP, THEMIS, and upstream solar wind.
+
+Repo-level docs (outside this skill folder): `docs/configuration.md` (env/cache
+variables), `docs/safety.md` (fetch/kernel boundary + opt-in), `docs/dependencies.md`
+(pinning `spedas_mcp`).
