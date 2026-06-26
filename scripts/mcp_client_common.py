@@ -19,45 +19,60 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 from typing import Any
 
+# Last-resort handshake version for the dependency-free JSON-RPC smoke/example
+# clients. Normal path is ``mcp.types.LATEST_PROTOCOL_VERSION``; this fallback is
+# used only when the wrapper interpreter has not installed the optional ``mcp``
+# package. Keep the fallback in this one helper (not duplicated in scripts), and
+# allow CI/users to override it while diagnosing protocol changes.
+FALLBACK_PROTOCOL_VERSION = "2025-11-25"
+PROTOCOL_VERSION_ENV_VARS = ("SPEDAS_MCP_PROTOCOL_VERSION", "MCP_PROTOCOL_VERSION")
 
-def negotiated_protocol_version() -> str | None:
-    """Resolve the MCP handshake ``protocolVersion`` without hardcoding it.
 
-    Source of truth is the ``mcp`` library that the server itself runs against
-    (``mcp>=1.26.0`` in ``.mcp.json`` / ``docs/dependencies.md``). If that library
-    happens to be importable in this interpreter we use its
-    ``LATEST_PROTOCOL_VERSION`` so the client and server can never drift to a
-    stale pinned constant (issue #25).
+def negotiated_protocol_version() -> str:
+    """Resolve the MCP handshake ``protocolVersion`` from one shared place.
 
-    If ``mcp`` is not importable here — the common case, since the wrapper repo
-    does not depend on it — we return ``None``. A ``None`` value means "omit the
-    field": the MCP spec lets the server fall back to its own latest supported
-    protocol version, which is exactly what we want rather than asserting a guess.
+    Precedence:
+
+    1. ``SPEDAS_MCP_PROTOCOL_VERSION`` / ``MCP_PROTOCOL_VERSION`` override for CI
+       or compatibility debugging.
+    2. ``mcp.types.LATEST_PROTOCOL_VERSION`` when the optional client package is
+       importable in this wrapper interpreter.
+    3. A single documented fallback matching the current ``mcp>=1.26.0`` server
+       dependency used by ``spedas_mcp``.
+
+    The initialize request must always include ``protocolVersion``: the real
+    server rejects an omitted field before any negotiation can happen. This keeps
+    issue #25's important property — no stale per-script ``2024-11-05`` literals —
+    while preserving the wrapper's no-hard-client-dependency design.
     """
+    for name in PROTOCOL_VERSION_ENV_VARS:
+        value = os.environ.get(name)
+        if value:
+            return value
     try:
         from mcp.types import LATEST_PROTOCOL_VERSION  # type: ignore
     except Exception:
-        return None
-    return LATEST_PROTOCOL_VERSION if isinstance(LATEST_PROTOCOL_VERSION, str) else None
+        return FALLBACK_PROTOCOL_VERSION
+    return LATEST_PROTOCOL_VERSION if isinstance(LATEST_PROTOCOL_VERSION, str) else FALLBACK_PROTOCOL_VERSION
 
 
 def initialize_params(client_name: str, client_version: str = "0.1.0") -> dict[str, Any]:
-    """Build the ``initialize`` params, including ``protocolVersion`` only if known.
+    """Build the ``initialize`` params with an explicit protocol version.
 
-    Omitting the field (rather than hardcoding ``2024-11-05``) lets the server
-    negotiate when this interpreter cannot supply the library's current value.
+    A missing ``protocolVersion`` is not a safe negotiation strategy for the
+    stdio JSON-RPC clients used here: ``spedas_mcp`` returns an invalid-params
+    initialize error. Use :func:`negotiated_protocol_version` instead of embedding
+    protocol-version literals in each script.
     """
-    params: dict[str, Any] = {
+    return {
+        "protocolVersion": negotiated_protocol_version(),
         "capabilities": {},
         "clientInfo": {"name": client_name, "version": client_version},
     }
-    version = negotiated_protocol_version()
-    if version is not None:
-        params["protocolVersion"] = version
-    return params
 
 
 async def read_message(reader: asyncio.StreamReader) -> dict[str, Any]:

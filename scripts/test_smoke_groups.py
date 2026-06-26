@@ -66,19 +66,72 @@ def test_core_tools_are_subset_of_groups() -> None:
 
 
 def test_initialize_params_no_hardcoded_protocol() -> None:
-    # #25: the handshake must not pin the old hardcoded constant. Either the field
-    # is sourced from the mcp library, or it is omitted so the server negotiates —
-    # but it must never be the stale "2024-11-05" literal regardless of mcp presence.
+    # #25: the handshake must not pin the old per-script hardcoded constant, but
+    # it must still send protocolVersion because the server rejects an omitted
+    # field. The version comes from one helper: env override, mcp library constant,
+    # or the helper's documented compatibility fallback.
     params = mcp_client.initialize_params("unit-test")
     assert params["clientInfo"]["name"] == "unit-test"
     assert "capabilities" in params
     version = mcp_client.negotiated_protocol_version()
-    if version is None:
-        assert "protocolVersion" not in params, "omit the field when version is unknown"
-    else:
-        assert params["protocolVersion"] == version, "must use the library's current version"
-        assert params["protocolVersion"] != "2024-11-05" or version == "2024-11-05"
-    print(f"PASS: initialize_params hardcode-free (protocolVersion={version!r})")
+    assert params["protocolVersion"] == version, "initialize must use shared helper version"
+    assert params["protocolVersion"] != "2024-11-05", "must not regress to the stale literal"
+    print(f"PASS: initialize_params uses shared protocolVersion={version!r}")
+
+
+def test_protocol_version_env_override() -> None:
+    # #25/#26: users and CI need an escape hatch if the MCP protocol changes before
+    # the wrapper updates. The primary SPEDAS-specific env var should win.
+    import os
+
+    old_spedas = os.environ.get("SPEDAS_MCP_PROTOCOL_VERSION")
+    old_generic = os.environ.get("MCP_PROTOCOL_VERSION")
+    try:
+        os.environ["MCP_PROTOCOL_VERSION"] = "generic-test-version"
+        assert mcp_client.negotiated_protocol_version() == "generic-test-version"
+        os.environ["SPEDAS_MCP_PROTOCOL_VERSION"] = "spedas-test-version"
+        assert mcp_client.negotiated_protocol_version() == "spedas-test-version"
+        assert mcp_client.initialize_params("unit-test")["protocolVersion"] == "spedas-test-version"
+    finally:
+        if old_spedas is None:
+            os.environ.pop("SPEDAS_MCP_PROTOCOL_VERSION", None)
+        else:
+            os.environ["SPEDAS_MCP_PROTOCOL_VERSION"] = old_spedas
+        if old_generic is None:
+            os.environ.pop("MCP_PROTOCOL_VERSION", None)
+        else:
+            os.environ["MCP_PROTOCOL_VERSION"] = old_generic
+    print("PASS: protocol version env override works")
+
+
+def test_protocol_version_fallback_when_mcp_unavailable() -> None:
+    # The CI wrapper matrix does not install the optional mcp client package. In
+    # that environment we must still send protocolVersion rather than omit it.
+    import builtins
+    import os
+
+    old_spedas = os.environ.pop("SPEDAS_MCP_PROTOCOL_VERSION", None)
+    old_generic = os.environ.pop("MCP_PROTOCOL_VERSION", None)
+    real_import = builtins.__import__
+
+    def blocked_import(name, globals=None, locals=None, fromlist=(), level=0):  # type: ignore[override]
+        if name == "mcp" or name.startswith("mcp."):
+            raise ImportError("blocked mcp import for fallback test")
+        return real_import(name, globals, locals, fromlist, level)
+
+    try:
+        builtins.__import__ = blocked_import
+        version = mcp_client.negotiated_protocol_version()
+        assert version == mcp_client.FALLBACK_PROTOCOL_VERSION
+        assert mcp_client.initialize_params("unit-test")["protocolVersion"] == version
+        assert version != "2024-11-05"
+    finally:
+        builtins.__import__ = real_import
+        if old_spedas is not None:
+            os.environ["SPEDAS_MCP_PROTOCOL_VERSION"] = old_spedas
+        if old_generic is not None:
+            os.environ["MCP_PROTOCOL_VERSION"] = old_generic
+    print("PASS: fallback protocolVersion is sent when mcp is unavailable")
 
 
 def test_report_stderr_surfaces_empty_exit() -> None:
@@ -130,6 +183,8 @@ def main() -> int:
     test_partial_backend_group_detected()
     test_core_tools_are_subset_of_groups()
     test_initialize_params_no_hardcoded_protocol()
+    test_protocol_version_env_override()
+    test_protocol_version_fallback_when_mcp_unavailable()
     test_report_stderr_surfaces_empty_exit()
     test_skip_group_check_render_is_not_missing()
     print("\nAll smoke group tests passed.")
