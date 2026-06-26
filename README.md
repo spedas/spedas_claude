@@ -234,7 +234,7 @@ CI (`.github/workflows/validate.yml`) runs all three.
 | `validate_plugin.py` reports a declared path does not resolve | a resource was moved/renamed but `.claude-plugin/plugin.json` still points at the old path, or the path was written relative to `.claude-plugin/` | move the resource to the plugin root, or correct the path key (paths are plugin-root-relative) |
 | `validate_plugin.py`: `spedas server must install from github.com/spedas/spedas_mcp` | `.mcp.json` points at a fork/wrong repo | restore the official `--from` URL |
 | `smoke_mcp_runtime.py` hangs or times out on first run | `uvx` is resolving `spedas_mcp` from GitHub with no/blocked network | ensure network access for the first run; raise `--timeout`; pre-warm with `uvx --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help` |
-| `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` (`curl -LsSf https://astral.sh/uv/install.sh \| sh`) |
+| `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide: https://docs.astral.sh/uv/getting-started/installation/ |
 | `missing_core_tools` non-empty | the resolved `spedas_mcp` version changed its tool surface | confirm the `spedas_mcp` HEAD; pin a known-good ref (see dependencies doc) |
 | Claude Code does not see the slash commands/skill | plugin dir not enabled, or resources not at the plugin root | re-enable the plugin dir; run `validate_plugin.py` to confirm layout |
 

@@ -44,7 +44,7 @@ science tool runs.
 
 | Signal | Likely cause | Fix |
 |---|---|---|
-| `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` (`curl -LsSf https://astral.sh/uv/install.sh \| sh`); reopen shell |
+| `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide (https://docs.astral.sh/uv/getting-started/installation/); reopen shell |
 | Smoke hangs/times out on first run | `uvx` resolving `spedas_mcp` from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help`) |
 | `Failed to spawn` / `Permission denied` writing cache or temp | `UV_CACHE_DIR` / `XDG_CACHE_HOME` / `TMPDIR` or a cache dir is read-only / over quota | point them at a writable path ([`configuration.md`](../../../docs/configuration.md)); the smoke auto-falls-back, real runs do not |
 | `No solution found` / cannot resolve `spedas_mcp` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
