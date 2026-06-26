@@ -15,12 +15,12 @@ The six tools:
 - `transform_coordinates(vector, time, from_frame, to_frame, spacecraft?)` —
   transform a 3D vector between frames.
 - `manage_spice_kernels(action, mission?, filenames?)` — the explicit, gated
-  kernel inspection/download surface.
+  kernel inspection/load/maintenance surface.
 
 Recommended order: start with the two `list_*` tools to confirm targets/frames,
 then do the geometry you need. Separate geometry lookups from measurement-data
-fetches, and **avoid large kernel downloads without confirming cache and scope** —
-keep `manage_spice_kernels` downloads explicit and narrowly scoped.
+fetches, and **avoid large kernel loads/downloads without confirming cache and scope** —
+keep `manage_spice_kernels(action="load"|"clean"|"purge")` explicit and narrowly scoped.
 
 For copy-ready argument examples, return-shape notes, and the
 metadata-vs-download distinction, see

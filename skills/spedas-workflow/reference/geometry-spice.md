@@ -19,7 +19,7 @@ Tool names and arguments match the live `spedas_mcp` schemas (verify with
 | `get_ephemeris` | `target`, `time` | may load kernels | Single-time state inline, or a timeseries trajectory written to CSV. |
 | `compute_distance` | `target1`, `target2`, `time_start`, `time_end` | may load kernels | Distance between two targets over a time range. |
 | `transform_coordinates` | `vector`, `time`, `from_frame`, `to_frame` | may load kernels | Transform a 3D vector between SPICE frames. |
-| `manage_spice_kernels` | `action` | yes for download/clean | Inspect/list/clean kernels; the explicit kernel-download surface. |
+| `manage_spice_kernels` | `action` | yes for load/clean/purge | Inspect status, check remote availability, load, clean, or purge kernels; the explicit kernel maintenance surface. |
 
 **Routing rule:** SPICE *geometry* goes through these tools, **not** through
 `fetch_data_product`. `fetch_data_product` is for CDAWeb/PDS measurement
@@ -101,22 +101,22 @@ transform_coordinates(
 Returns: the transformed 3D vector (small, inline). Use `list_coordinate_frames`
 first to confirm both `from_frame` and `to_frame` are supported.
 
-## Kernels: the gated download surface
+## Kernels: gated load and maintenance
 
-`manage_spice_kernels` is where kernel inspection and downloads are explicit.
-Start with a read-only `status`/`list` action; only request a download with a
+`manage_spice_kernels` is where kernel inspection, remote checks, load, clean, and purge actions are explicit.
+Start with read-only `status` or `check_remote`; only request `load`, `clean`, or `purge` with a
 clear scope and after confirming cache location.
 
 ```jsonc
-manage_spice_kernels(action="status")                         // read-only inventory
-manage_spice_kernels(action="list", mission="PSP")            // what PSP kernels exist/are cached
-// Downloads are explicit and scoped — confirm before running:
-manage_spice_kernels(action="download", mission="PSP",
+manage_spice_kernels(action="status")                         // read-only local inventory
+manage_spice_kernels(action="check_remote", mission="PSP")     // read-only remote availability check
+// Kernel loads are explicit and scoped — confirm before running:
+manage_spice_kernels(action="load", mission="PSP",
                      filenames=["spk_psp_xxx.bsp"])            // example; gate on user intent
 ```
 
 Returns: kernel inventory/status, or the result of the requested action.
-**Avoid large kernel downloads without confirming cache directory and scope.**
+**Avoid large kernel loads/downloads without confirming cache directory and scope.**
 The runtime smoke and validators never trigger downloads.
 
 For *data-layer* cache status of the SPICE source (sizes/locations), you can also
@@ -137,5 +137,5 @@ transform_coordinates(vector=[1,0,0], time="2021-11-21T08:00:00Z",
 manage_spice_kernels(action="status")
 ```
 
-Each call above is metadata/geometry only. Kernel downloads happen only via an
-explicit `manage_spice_kernels(action="download", …)` you choose to run.
+The walkthrough above avoids `manage_spice_kernels(action="load")`, `clean`, and `purge`. Kernel loads or maintenance happen only through an explicit
+`manage_spice_kernels(action="load"|"clean"|"purge", …)` you choose to run.
