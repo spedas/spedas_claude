@@ -128,27 +128,46 @@ def main() -> int:
         (p / "templates" / "provenance" / "request.json").write_text("{ not valid json ")
         expect_fail(p, "malformed provenance JSON template", "request.json")
 
-        # 12) Issue #11: a command file without YAML frontmatter must fail
-        #     (the description never surfaces in Claude Code).
+        # 12) Batch F (#32): the pinning/reproducibility doc must exist — it is
+        #     cross-linked from README/SKILL/troubleshooting/artifact-provenance.
         p = copy_plugin(base / "c12")
+        (p / "docs" / "dependencies.md").unlink()
+        expect_fail(p, "missing docs/dependencies.md", "docs/dependencies.md")
+
+        # 13) Batch F (#32): the documented first-run example must exist
+        #     (advertised in README and CHANGELOG).
+        p = copy_plugin(base / "c13")
+        (p / "examples" / "run_overview.py").unlink()
+        expect_fail(p, "missing examples/run_overview.py", "examples/run_overview.py")
+
+        # 14) Batch F (#32): the advertised example must byte-compile, or the
+        #     onboarding path is broken.
+        p = copy_plugin(base / "c14")
+        (p / "examples" / "run_overview.py").write_text("def main(:\n    pass\n")
+        expect_fail(p, "example does not byte-compile", "byte-compile")
+
+        # 15) Issue #11: a command file without YAML frontmatter must fail
+        #     (the description never surfaces in Claude Code).
+        p = copy_plugin(base / "c15")
         cmd = p / "commands" / "overview.md"
         text = cmd.read_text()
         body = text.split("---", 2)[2] if text.lstrip().startswith("---") else text
         cmd.write_text(body.lstrip())
         expect_fail(p, "command missing frontmatter", "YAML frontmatter")
 
-        # 13) Issue #11: frontmatter present but no description: field must fail.
-        p = copy_plugin(base / "c13")
+        # 16) Issue #11: frontmatter present but no description: field must fail.
+        p = copy_plugin(base / "c16")
         cmd = p / "commands" / "workflow.md"
         cmd.write_text(cmd.read_text().replace("description:", "summary:", 1))
         expect_fail(p, "command frontmatter missing description", "description:")
 
-        # 14) Issue #11: a command that never references $ARGUMENTS must fail,
+        # 17) Issue #11: a command that never references $ARGUMENTS must fail,
         #     because user-supplied parameters would silently be dropped.
-        p = copy_plugin(base / "c14")
+        p = copy_plugin(base / "c17")
         cmd = p / "commands" / "data.md"
         cmd.write_text(cmd.read_text().replace("$ARGUMENTS", "the request"))
         expect_fail(p, "command missing $ARGUMENTS", "$ARGUMENTS")
+
 
     print("\nAll validator tests passed.")
     return 0

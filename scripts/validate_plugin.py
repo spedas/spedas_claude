@@ -273,6 +273,25 @@ def validate_batch_c_docs() -> None:
         load_json(f"templates/provenance/{jname}")
 
 
+def validate_reproducibility_and_example() -> None:
+    """#32: the pinning/reproducibility doc and the documented first-run example are
+    ship-critical and heavily cross-linked, so their absence must fail CI — not ship
+    silently. ``docs/dependencies.md`` is linked from README/SKILL/troubleshooting/
+    artifact-provenance; ``examples/run_overview.py`` is the README/CHANGELOG-advertised
+    onboarding path.
+    """
+    require("docs/dependencies.md")        # pinning/reproducibility, cross-linked widely
+    example = require("examples/run_overview.py")  # documented first-run example (README/CHANGELOG)
+    # The advertised example must byte-compile, or the onboarding path is broken.
+    if example is not None:
+        import py_compile
+
+        try:
+            py_compile.compile(str(example), doraise=True)
+        except py_compile.PyCompileError as exc:
+            fail(f"examples/run_overview.py does not byte-compile: {exc.msg}")
+
+
 def validate_hooks_placeholder_intentional() -> None:
     """#6: assert hooks/hooks.json is a *deliberate* empty placeholder OR a valid
     hooks object — never a malformed/half-edited file. The structural check lives in
@@ -342,6 +361,8 @@ def main() -> int:
     # Batch C (#5/#6/#9/#13/#14/#17): cross-referenced docs, runbook, templates,
     # and the opt-in hook example must resolve; hooks placeholder must be intentional.
     validate_batch_c_docs()
+    # Batch F (#32): pinning/reproducibility doc + documented first-run example.
+    validate_reproducibility_and_example()
     validate_hooks_placeholder_intentional()
 
     if errors:
