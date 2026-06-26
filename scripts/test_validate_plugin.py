@@ -128,6 +128,24 @@ def main() -> int:
         (p / "templates" / "provenance" / "request.json").write_text("{ not valid json ")
         expect_fail(p, "malformed provenance JSON template", "request.json")
 
+        # 12) Batch F (#32): the pinning/reproducibility doc must exist — it is
+        #     cross-linked from README/SKILL/troubleshooting/artifact-provenance.
+        p = copy_plugin(base / "c12")
+        (p / "docs" / "dependencies.md").unlink()
+        expect_fail(p, "missing docs/dependencies.md", "docs/dependencies.md")
+
+        # 13) Batch F (#32): the documented first-run example must exist
+        #     (advertised in README and CHANGELOG).
+        p = copy_plugin(base / "c13")
+        (p / "examples" / "run_overview.py").unlink()
+        expect_fail(p, "missing examples/run_overview.py", "examples/run_overview.py")
+
+        # 14) Batch F (#32): the advertised example must byte-compile, or the
+        #     onboarding path is broken.
+        p = copy_plugin(base / "c14")
+        (p / "examples" / "run_overview.py").write_text("def main(:\n    pass\n")
+        expect_fail(p, "example does not byte-compile", "byte-compile")
+
     print("\nAll validator tests passed.")
     return 0
 

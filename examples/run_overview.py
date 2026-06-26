@@ -46,6 +46,12 @@ from typing import Any
 # examples/ sits one level under the repo root; .mcp.json lives at the root.
 ROOT = Path(__file__).resolve().parents[1]
 
+# Share the stdio MCP client helpers (protocol-version source-of-truth, framing,
+# and failure surfacing) with scripts/smoke_mcp_runtime.py so the example and the
+# smoke stay in lockstep (issues #25, #26).
+sys.path.insert(0, str(ROOT / "scripts"))
+import mcp_client_common as mcp_client  # noqa: E402
+
 # The key workflow tool this example demonstrates. Read-only and credential-free.
 OVERVIEW_TOOL = "spedas_overview"
 
@@ -105,40 +111,6 @@ def _server_env(server: dict[str, Any], tmp: Path) -> dict[str, str]:
     return env
 
 
-async def _read_message(reader: asyncio.StreamReader) -> dict[str, Any]:
-    # MCP stdio framing: one JSON-RPC object per line. Reading it directly keeps
-    # this example free of any extra client dependency.
-    line = await reader.readline()
-    if not line:
-        raise RuntimeError("MCP server closed stdout before responding")
-    return json.loads(line.decode("utf-8"))
-
-
-async def _send_message(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    writer.write(body + b"\n")
-    await writer.drain()
-
-
-async def _request(
-    reader: asyncio.StreamReader,
-    writer: asyncio.StreamWriter,
-    request_id: int,
-    method: str,
-    params: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    await _send_message(
-        writer,
-        {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params or {}},
-    )
-    while True:
-        message = await _read_message(reader)
-        if message.get("id") == request_id:
-            if "error" in message:
-                raise RuntimeError(f"MCP {method} failed: {message['error']}")
-            return message.get("result") or {}
-
-
 async def _call_overview(
     command: str, args: list[str], env: dict[str, str], timeout: float
 ) -> dict[str, Any]:
@@ -153,18 +125,16 @@ async def _call_overview(
     )
     assert proc.stdin is not None and proc.stdout is not None
     try:
-        init = {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "spedas-overview-example", "version": "0.1.0"},
-        }
-        await asyncio.wait_for(_request(proc.stdout, proc.stdin, 1, "initialize", init), timeout)
-        await _send_message(
+        # protocolVersion is sourced from the mcp library when available, else
+        # omitted so the server negotiates — never a stale hardcoded constant (#25).
+        init = mcp_client.initialize_params("spedas-overview-example")
+        await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 1, "initialize", init), timeout)
+        await mcp_client.send_message(
             proc.stdin,
             {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
         )
         result = await asyncio.wait_for(
-            _request(
+            mcp_client.request(
                 proc.stdout,
                 proc.stdin,
                 2,
@@ -175,16 +145,9 @@ async def _call_overview(
         )
         return result
     finally:
-        if proc.returncode is None:
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), 5)
-            except asyncio.TimeoutError:
-                proc.kill()
-                await proc.wait()
-        stderr = (await proc.stderr.read()).decode("utf-8", errors="replace") if proc.stderr else ""
-        if proc.returncode not in (0, -15, None) and stderr:
-            print(stderr[-4000:], file=sys.stderr)
+        # Report server stderr on any abnormal exit, even when stderr is empty (#26).
+        stderr = await mcp_client.drain_process(proc)
+        mcp_client.report_stderr(proc.returncode, stderr)
 
 
 def _result_to_text(result: dict[str, Any]) -> str:
@@ -201,7 +164,9 @@ def _result_to_text(result: dict[str, Any]) -> str:
             for block in content
             if isinstance(block, dict) and block.get("type") == "text"
         ]
-        text = "\n".join(p for p in parts if p)
+        # rstrip each block so a trailing newline inside a block does not produce
+        # a spurious blank line when joined (#26).
+        text = "\n".join(p.rstrip("\n") for p in parts if p.strip())
         if text:
             return text
     return json.dumps(result, indent=2)
@@ -222,7 +187,12 @@ def main() -> int:
     command, command_args = _server_command(server)
     with tempfile.TemporaryDirectory(prefix="spedas-overview-example-") as tmpdir:
         env = _server_env(server, Path(tmpdir))
-        result = asyncio.run(_call_overview(command, command_args, env, args.timeout))
+        # Turn timeouts / server crashes / closed-stdout into a one-line message
+        # and non-zero exit instead of a raw traceback (#26).
+        result = mcp_client.run_client(
+            _call_overview(command, command_args, env, args.timeout),
+            context="initialize/overview",
+        )
 
     if args.json:
         print(json.dumps(result, indent=2))

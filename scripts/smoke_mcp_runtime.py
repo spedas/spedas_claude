@@ -20,6 +20,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Shared stdio MCP client helpers (protocol-version source-of-truth, framing,
+# failure surfacing), kept in lockstep with examples/run_overview.py (#25, #26).
+sys.path.insert(0, str(ROOT / "scripts"))
+import mcp_client_common as mcp_client  # noqa: E402
+
 # Tool groups, aligned with the reference docs under
 # skills/spedas-workflow/reference/. The smoke verifies that each advertised
 # group is actually present at runtime, not just that the total tool count
@@ -180,41 +185,6 @@ def _server_env(server: dict[str, Any], tmp: Path) -> dict[str, str]:
     return env
 
 
-async def _read_message(reader: asyncio.StreamReader) -> dict[str, Any]:
-    # The Python MCP stdio transport uses JSON-RPC messages framed as one JSON
-    # object per line. This avoids depending on the mcp Python client package in
-    # the plugin wrapper repos.
-    line = await reader.readline()
-    if not line:
-        raise RuntimeError("MCP server closed stdout before responding")
-    return json.loads(line.decode("utf-8"))
-
-
-async def _send_message(writer: asyncio.StreamWriter, payload: dict[str, Any]) -> None:
-    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    writer.write(body + b"\n")
-    await writer.drain()
-
-
-async def _request(
-    reader: asyncio.StreamReader,
-    writer: asyncio.StreamWriter,
-    request_id: int,
-    method: str,
-    params: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    await _send_message(
-        writer,
-        {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params or {}},
-    )
-    while True:
-        message = await _read_message(reader)
-        if message.get("id") == request_id:
-            if "error" in message:
-                raise RuntimeError(f"MCP {method} failed: {message['error']}")
-            return message.get("result") or {}
-
-
 async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: float) -> list[str]:
     proc = await asyncio.create_subprocess_exec(
         command,
@@ -226,27 +196,18 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
     )
     assert proc.stdin is not None and proc.stdout is not None
     try:
-        init = {
-            "protocolVersion": "2024-11-05",
-            "capabilities": {},
-            "clientInfo": {"name": "spedas-plugin-runtime-smoke", "version": "0.1.0"},
-        }
-        await asyncio.wait_for(_request(proc.stdout, proc.stdin, 1, "initialize", init), timeout)
-        await _send_message(proc.stdin, {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
-        result = await asyncio.wait_for(_request(proc.stdout, proc.stdin, 2, "tools/list"), timeout)
+        # protocolVersion sourced from the mcp library when available, else
+        # omitted so the server negotiates — never a stale hardcoded constant (#25).
+        init = mcp_client.initialize_params("spedas-plugin-runtime-smoke")
+        await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 1, "initialize", init), timeout)
+        await mcp_client.send_message(proc.stdin, {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
+        result = await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 2, "tools/list"), timeout)
         tools = result.get("tools") or []
         return [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)]
     finally:
-        if proc.returncode is None:
-            proc.terminate()
-            try:
-                await asyncio.wait_for(proc.wait(), 5)
-            except asyncio.TimeoutError:
-                proc.kill()
-                await proc.wait()
-        stderr = (await proc.stderr.read()).decode("utf-8", errors="replace") if proc.stderr else ""
-        if proc.returncode not in (0, -15, None) and stderr:
-            print(stderr[-4000:], file=sys.stderr)
+        # Report server stderr on any abnormal exit, even when stderr is empty (#26).
+        stderr = await mcp_client.drain_process(proc)
+        mcp_client.report_stderr(proc.returncode, stderr)
 
 
 def main() -> int:
@@ -256,7 +217,11 @@ def main() -> int:
     parser.add_argument(
         "--skip-group-check",
         action="store_true",
-        help="only verify core tools, not the geometry/SPICE and unified-vs-backend tool groups",
+        help=(
+            "only verify core tools, not the geometry/SPICE and unified-vs-backend "
+            "tool groups; group lines are then shown as 'skipped (not checked)' so "
+            "the output matches the exit code"
+        ),
     )
     args = parser.parse_args()
 
@@ -264,7 +229,12 @@ def main() -> int:
     command, command_args = _server_command(server)
     with tempfile.TemporaryDirectory(prefix="spedas-plugin-smoke-") as tmpdir:
         env = _server_env(server, Path(tmpdir))
-        tools = asyncio.run(_smoke(command, command_args, env, args.timeout))
+        # Turn timeouts / server crashes / closed-stdout into a one-line message
+        # and non-zero exit instead of a raw traceback (#26).
+        tools = mcp_client.run_client(
+            _smoke(command, command_args, env, args.timeout),
+            context="initialize/tools-list",
+        )
 
     missing = [name for name in EXPECTED_CORE_TOOLS if name not in tools]
     groups = _check_groups(tools)
@@ -290,7 +260,13 @@ def main() -> int:
         print(f"SPEDAS plugin MCP runtime smoke: {'OK' if payload['ok'] else 'FAIL'}")
         print(f"tool_count: {payload['tool_count']}")
         for name, info in groups.items():
-            status = "ok" if info["ok"] else "MISSING " + ",".join(info["missing"])
+            # With --skip-group-check the group result does not affect the exit
+            # code, so reporting "MISSING ..." would contradict a passing run (#33).
+            # Show the groups as explicitly skipped instead.
+            if args.skip_group_check:
+                status = "skipped (not checked)"
+            else:
+                status = "ok" if info["ok"] else "MISSING " + ",".join(info["missing"])
             print(f"  group {name}: {status}")
         if missing:
             print("missing core tools: " + ", ".join(missing), file=sys.stderr)
