@@ -55,6 +55,11 @@ from `.mcp.json`.
   workflow end to end (#19).
 - CI hardening: cross-platform/Python validation matrix, `concurrency` control,
   and job/step `timeout-minutes` in `.github/workflows/validate.yml` (#16).
+- YAML frontmatter (`description`, `argument-hint`) and `$ARGUMENTS` argument
+  substitution on all four slash commands (`overview`, `data`, `workflow`,
+  `geometry`), so they can be invoked parameterized (e.g. `/geometry PSP HCI
+  2024-06-25`). `validate_plugin.py` now enforces command frontmatter and the
+  `$ARGUMENTS` reference, with focused negative tests (#11).
 
 ### Deferred
 - `uv` dependency caching is intentionally deferred until `spedas_mcp` is pinned

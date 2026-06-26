@@ -1,3 +1,8 @@
+---
+description: Run the SPEDAS geometry/SPICE workflow (positions, distances, frame transforms).
+argument-hint: "[target] [frame] [time]"
+---
+
 # SPEDAS geometry / SPICE workflow
 
 Use the dedicated geometry/SPICE tools for spacecraft/body positions, distances,
@@ -29,3 +34,20 @@ safety boundary in [`docs/safety.md`](../docs/safety.md).
 For copy-ready argument examples, return-shape notes, and the
 metadata-vs-download distinction, see
 [`skills/spedas-workflow/reference/geometry-spice.md`](../skills/spedas-workflow/reference/geometry-spice.md).
+
+## Invocation arguments
+
+User-supplied arguments (may be empty): `$ARGUMENTS`
+
+Parse `$ARGUMENTS` for the geometry request. Expected (free-form, all optional):
+
+- **target** — spacecraft/body (e.g. `PSP`, `Earth`); confirm via
+  `list_spice_missions()`.
+- **frame** — coordinate frame (e.g. `HCI`, `GSE`); confirm via
+  `list_coordinate_frames()`.
+- **time** — ISO time or range (e.g. `2024-06-25` or `2024-06-25/2024-06-26`).
+
+Example: `/geometry PSP HCI 2024-06-25`. Confirm targets/frames with the
+`list_*` tools first, and keep `manage_spice_kernels(action="load"|...)` opt-in
+and narrowly scoped even when arguments request a position. If arguments are
+missing, ask for target, frame, and time.
