@@ -6,6 +6,12 @@ official SPEDAS MCP server over the network (`uvx` from
 `~/.cache/spedas/*`. Because it executes code fetched at runtime, we take
 disclosure seriously.
 
+`spedas_mcp` is resolved from the upstream **default branch (unpinned)** — there is
+no `@<tag/commit>` ref in `.mcp.json` — so whatever is on that branch executes on
+every CI run and on a user's first run. To pin an exact commit/tag for a
+reproducible or audited deployment, follow the procedure in
+[docs/dependencies.md](docs/dependencies.md).
+
 ## What belongs here vs. upstream
 
 - **This repo (`spedas_claude`)** — issues in the plugin wrapper: the MCP wiring

@@ -8,7 +8,7 @@ body:
         **This tracker is for the plugin wrapper.** If a `spedas_*` MCP tool
         returns wrong data or crashes, that is the science server —
         [file it at spedas/spedas_mcp](https://github.com/spedas/spedas_mcp/issues).
-        For security issues, see [SECURITY.md](../SECURITY.md). A
+        For security issues, see [SECURITY.md](../../SECURITY.md). A
         `ModuleNotFoundError: pyspedas` is expected (this plugin does not install
         PySPEDAS) — see the README "two layers" section.
   - type: textarea

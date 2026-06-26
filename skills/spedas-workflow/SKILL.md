@@ -13,7 +13,7 @@ Think in four layers:
 
 1. **Science question** — event, mission, interval, coordinate system, expected signal, and success criteria.
 2. **Workflow layer** — SPEDAS MCP planning/comparison/bundle tools or PySPEDAS recipes.
-3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model.
+3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model. `spice` is a discovery category here (`browse_data_sources` / `load_data_source` / `browse_data_parameters`), but SPICE geometry is **not** fetched via `fetch_data_product` — route ephemerides/frames through the geometry/SPICE tools (see `reference/geometry-spice.md`).
 4. **Artifacts and provenance** — outputs are paths, manifests, hashes, plots, tables, and notes; avoid dumping large arrays/CDF/tplot objects into chat.
 
 ## Default workflow

@@ -28,4 +28,4 @@ safety boundary in [`docs/safety.md`](../docs/safety.md).
 
 For copy-ready argument examples, return-shape notes, and the
 metadata-vs-download distinction, see
-`skills/spedas-workflow/reference/geometry-spice.md`.
+[`skills/spedas-workflow/reference/geometry-spice.md`](../skills/spedas-workflow/reference/geometry-spice.md).

@@ -29,7 +29,7 @@ cp -r templates/provenance/* runs/2015-10-16-mms-magnetopause/
 cd runs/2015-10-16-mms-magnetopause
 
 # 2. Capture the environment (records the reproducibility-critical bits).
-./capture_environment.sh > environment.txt   # or: bash capture_environment.sh
+./capture_environment.sh > environment.txt   # or: bash capture_environment.sh > environment.txt
 
 # 3. Fill request.json BEFORE fetching; record opt-in in allowed_side_effects.
 # 4. Append a line to tool_calls.jsonl for each call as you go.
