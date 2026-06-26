@@ -65,7 +65,7 @@ When something fails, label it precisely:
 
 ## References in this skill folder
 
-- `reference/mcp-quickstart.md` — Claude/Codex plugin smoke and first user checks.
+- `reference/mcp-quickstart.md` — Claude plugin smoke, local wrapper validation, and first user checks.
 - `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
 - `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.
 - `reference/artifact-provenance.md` — what to save for reproducible science.

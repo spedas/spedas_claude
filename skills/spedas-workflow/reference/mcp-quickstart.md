@@ -10,22 +10,17 @@ claude -p   --plugin-dir .   --mcp-config .mcp.json   --allowedTools mcp__spedas
 
 Expected: Claude initializes the `spedas` MCP server and can call `spedas_overview`, `browse_data_sources`, and `plan_spedas_observation`.
 
-## Codex smoke
+## Local wrapper validation
 
-From the `spedas_codex` repository:
-
-```bash
-python scripts/validate_plugin.py
-python scripts/smoke_mcp_runtime.py --json
-```
-
-Then try Codex CLI:
+From the `spedas_claude` repository, run the offline package checks and the safe MCP runtime smoke:
 
 ```bash
-codex exec --cd . --sandbox workspace-write   "Validate the SPEDAS Codex wrapper without editing files. Prefer the MCP if available; otherwise run the safe runtime smoke and summarize evidence."
+python3 scripts/validate_plugin.py
+python3 scripts/test_validate_plugin.py
+python3 scripts/smoke_mcp_runtime.py --json --timeout 240
 ```
 
-Depending on Codex CLI version/config, `.mcp.json` may not automatically expose MCP tools in the interactive session. The runtime smoke is the authoritative wrapper check because it starts the same `uvx ... spedas-mcp` command from `.mcp.json` and performs MCP initialize + tools/list.
+Expected: validation exits 0, the negative-case validator tests pass, and the runtime smoke returns JSON with `ok: true`, `tool_count: 26`, and no missing core tools. The runtime smoke starts the same `uvx ... spedas-mcp` command declared in `.mcp.json` and performs MCP initialize + tools/list without fetching mission data or downloading SPICE kernels.
 
 ## Safe first question
 
