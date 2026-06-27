@@ -201,6 +201,139 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# --- Cross-platform cache-path analysis (issue #5) -------------------------------
+#
+# These helpers are PURE: they take a raw configured value and an explicit
+# environment mapping, and never touch the real process environment, the real
+# filesystem, or the network. That makes them deterministic to unit-test on any OS
+# while *simulating* another OS's environment (native Windows with USERPROFILE and
+# no HOME, a missing HOME on POSIX, a literal unresolved ${HOME}, etc.). The runtime
+# smoke and the offline ``--cache-diagnostics`` flag both build on them.
+
+# A still-unresolved POSIX-style ``$VAR`` / ``${VAR}`` or Windows-style ``%VAR%``
+# reference. If one of these survives expansion, the configured value reached the
+# server as a literal token instead of a real path -> caching silently breaks.
+_POSIX_VAR_RE = re.compile(r"\$\{[^}]+\}|\$[A-Za-z_][A-Za-z0-9_]*")
+_WINDOWS_VAR_RE = re.compile(r"%[^%]+%")
+
+
+def _expand_with(value: str, environ: dict[str, str]) -> str:
+    """Expand both ``${VAR}``/``$VAR`` (POSIX) and ``%VAR%`` (Windows) forms against
+    an explicit ``environ`` mapping.
+
+    ``os.path.expandvars`` is platform-dependent (it only honours ``%VAR%`` on
+    Windows and reads the live process env), which makes it useless for simulating
+    another OS in a unit test. This does both syntaxes against the mapping we are
+    handed, leaving any unknown variable as its literal token so the caller can
+    flag it.
+    """
+
+    def _posix(match: "re.Match[str]") -> str:
+        token = match.group(0)
+        name = token[2:-1] if token.startswith("${") else token[1:]
+        return environ.get(name, token)
+
+    def _windows(match: "re.Match[str]") -> str:
+        name = match.group(0)[1:-1]
+        return environ.get(name, match.group(0))
+
+    return _WINDOWS_VAR_RE.sub(_windows, _POSIX_VAR_RE.sub(_posix, value))
+
+
+def analyze_cache_path(raw: str, environ: dict[str, str]) -> dict[str, Any]:
+    """Analyse one configured cache-path string for cross-platform portability.
+
+    Returns the raw value, the expanded value (against ``environ``), the list of
+    variable tokens that did NOT resolve, whether the result still looks like an
+    unresolved literal, whether it looks absolute, and any path-flavor caveats
+    (mixed separators, a drive letter with forward slashes, a POSIX root that
+    likely came from an unset ``HOME``). No filesystem or network access.
+    """
+    expanded = _expand_with(raw, environ)
+    unresolved = _POSIX_VAR_RE.findall(expanded) + _WINDOWS_VAR_RE.findall(expanded)
+    has_drive = bool(re.match(r"^[A-Za-z]:", expanded))
+    has_backslash = "\\" in expanded
+    has_forward = "/" in expanded
+    looks_absolute = expanded.startswith("/") or has_drive or expanded.startswith("\\\\")
+
+    caveats: list[str] = []
+    if unresolved:
+        caveats.append(
+            "unresolved variable(s) "
+            + ",".join(unresolved)
+            + " — value reached the server as a literal, caching disabled"
+        )
+    if has_drive and has_forward and has_backslash:
+        caveats.append(
+            "mixed path separators on a Windows drive path — some C/Fortran/SPICE "
+            "loaders reject '\\' mixed with '/'"
+        )
+    # A value that expanded to a leading-slash root with nothing before it usually
+    # means ${HOME} expanded to empty (HOME unset on native Windows) -> wrong root.
+    if not unresolved and not has_drive and expanded.startswith("/."):
+        caveats.append(
+            "path collapsed to a '/.<something>' root — a base variable likely "
+            "expanded to empty (e.g. HOME unset on native Windows)"
+        )
+
+    return {
+        "raw": raw,
+        "expanded": expanded,
+        "unresolved_vars": unresolved,
+        "is_unresolved": bool(unresolved),
+        "looks_absolute": looks_absolute,
+        "path_flavor": {
+            "has_drive_letter": has_drive,
+            "has_backslash": has_backslash,
+            "has_forward_slash": has_forward,
+        },
+        "caveats": caveats,
+    }
+
+
+# The cache/kernel variables the SPEDAS backends actually read (issue #5/#17). The
+# offline diagnostic reports these from .mcp.json directly, no server start needed.
+_CONFIGURED_CACHE_KEYS = (
+    "XHELIO_CDAWEB_CACHE_DIR",
+    "PDSMCP_CACHE_DIR",
+    "XHELIO_SPICE_KERNEL_DIR",
+)
+
+
+def offline_cache_diagnostics(server: dict[str, Any], environ: dict[str, str]) -> dict[str, Any]:
+    """Analyse the cache vars configured in ``.mcp.json`` against an environment,
+    without starting the server, touching the disk, or fetching anything.
+
+    This is the cheap cross-platform check (issue #5): it runs identically on
+    ubuntu/macos/windows CI to prove how the packaged ``${HOME}/.cache/...`` values
+    resolve on each OS, and flags any value that survived as an unresolved literal.
+    ``environ`` is passed in so the same call can simulate native Windows (no HOME,
+    has USERPROFILE) from any host OS.
+    """
+    configured = server.get("env") or {}
+    if not isinstance(configured, dict):
+        raise SystemExit("spedas MCP server env must be an object when present")
+    per_var: dict[str, Any] = {}
+    any_unresolved = False
+    for key in _CONFIGURED_CACHE_KEYS:
+        raw = configured.get(key)
+        if not isinstance(raw, str):
+            per_var[key] = {"configured": False}
+            continue
+        analysis = analyze_cache_path(raw, environ)
+        analysis["configured"] = True
+        any_unresolved = any_unresolved or analysis["is_unresolved"]
+        per_var[key] = analysis
+    return {
+        "vars": per_var,
+        "any_unresolved": any_unresolved,
+        "note": (
+            "offline: expands .mcp.json cache vars against the given environment; "
+            "no server start, no filesystem write, no network"
+        ),
+    }
+
+
 def _cache_diagnostics(env: dict[str, str], tmp: Path) -> dict[str, Any]:
     """Report resolved cache paths, temp-isolation status, and writability for the
     smoke subprocess (issue #5 diagnostics).
@@ -348,6 +481,62 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
         mcp_client.report_stderr(proc.returncode, stderr)
 
 
+def _run_cache_diagnostics(server: dict[str, Any], json_output: bool, report_only: bool = False) -> int:
+    """Offline issue-#5 cache-path check against the current environment.
+
+    Does NOT start the server, write to disk, or hit the network. Returns 0 when
+    every configured cache var expanded to a real path (no unresolved literal),
+    1 otherwise — unless ``report_only`` is set, in which case it always returns 0
+    and only reports (per-OS CI evidence, where an unresolved ${HOME} on native
+    Windows is expected, not a failure). This is the cheap check the CI wrapper
+    matrix runs on every OS.
+    """
+    diag = offline_cache_diagnostics(server, os.environ.copy())
+    resolved = not diag["any_unresolved"]
+    ok = True if report_only else resolved
+    if json_output:
+        print(json.dumps(
+            {"ok": ok, "resolved": resolved, "report_only": report_only,
+             "configured_cache_diagnostics": diag},
+            indent=2,
+        ))
+    else:
+        if resolved:
+            header = "OK"
+        else:
+            header = "UNRESOLVED (report-only)" if report_only else "FAIL"
+        print(f"SPEDAS cache-path diagnostics (offline): {header}")
+        for key, info in diag["vars"].items():
+            if not info.get("configured"):
+                print(f"  {key}: (not configured in .mcp.json)")
+                continue
+            print(f"  {key}:")
+            print(f"    raw      : {info['raw']}")
+            print(f"    expanded : {info['expanded']}")
+            if info["is_unresolved"]:
+                print(
+                    "    UNRESOLVED: "
+                    + ",".join(info["unresolved_vars"])
+                    + " — value reached the server as a literal; caching disabled",
+                    file=sys.stderr,
+                )
+            for caveat in info["caveats"]:
+                if not info["is_unresolved"]:
+                    print(f"    caveat   : {caveat}")
+        if not resolved:
+            msg = (
+                "one or more cache paths did not resolve in this environment; "
+                "set an absolute cache dir (see docs/configuration.md)"
+            )
+            if report_only:
+                # Per-OS CI evidence: native Windows has no HOME, so the packaged
+                # ${HOME} value is expected to be unresolved here. Report, don't fail.
+                print(f"note (report-only): {msg}")
+            else:
+                print(msg, file=sys.stderr)
+    return 0 if ok else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true", help="print machine-readable JSON")
@@ -361,9 +550,35 @@ def main() -> int:
             "the output matches the exit code"
         ),
     )
+    parser.add_argument(
+        "--cache-diagnostics",
+        action="store_true",
+        help=(
+            "offline issue-#5 check: analyse how .mcp.json's cache vars expand in "
+            "the CURRENT environment without starting the server, touching the disk, "
+            "or fetching. Cheap enough to run on ubuntu/macos/windows CI. Exits "
+            "non-zero if any configured cache path survived as an unresolved literal."
+        ),
+    )
+    parser.add_argument(
+        "--report-only",
+        action="store_true",
+        help=(
+            "with --cache-diagnostics, always exit 0 and only REPORT the analysis. "
+            "Use this for per-OS CI evidence gathering, where an unresolved ${HOME} "
+            "on a native-Windows runner (HOME legitimately unset) is expected output, "
+            "not a build failure."
+        ),
+    )
     args = parser.parse_args()
 
     server = _load_server_config()
+
+    if args.cache_diagnostics:
+        return _run_cache_diagnostics(
+            server, json_output=args.json, report_only=args.report_only
+        )
+
     command, command_args = _server_command(server)
     dependency_audit = _parse_dependency_audit(server)
     with tempfile.TemporaryDirectory(prefix="spedas-plugin-smoke-") as tmpdir:
@@ -395,6 +610,10 @@ def main() -> int:
         "command": [command, *command_args],
         "dependency_audit": dependency_audit,
         "cache_diagnostics": cache_diagnostics,
+        # How the packaged .mcp.json cache vars expand in THIS (host) environment,
+        # independent of the temp-isolation the smoke applies to its subprocess.
+        # Surfaces an unresolved ${HOME} or a wrong root on the real OS (issue #5).
+        "configured_cache_diagnostics": offline_cache_diagnostics(server, os.environ.copy()),
         "note": "initialize + tools/list only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
     }
     if args.json:
