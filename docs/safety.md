@@ -64,8 +64,16 @@ without a fresh confirmation.
 ## Enforcement plan & `hooks/hooks.json`
 
 `hooks/hooks.json` ships as an **intentional empty placeholder** (`{"hooks": []}`).
-This is a deliberate, documented choice, not a regression — the validator asserts it
-stays a valid placeholder so an accidental malformed hook fails CI.
+This is a deliberate, documented choice, not a regression. The intent is machine-checked
+by a sidecar contract, [`../hooks/default_posture.json`](../hooks/default_posture.json),
+which declares `"spedas_default_hook_posture": "deferred"` and links this issue and the
+opt-in example. The validator (`scripts/validate_plugin.py`) asserts that while the hooks
+file is empty the contract exists and stays consistent, so an empty array is never read
+as a silent regression and a malformed hook still fails CI.
+
+Enabling a `PreToolUse` gate **by default** is a maintainer/product decision, so
+**issue #6 remains open** for that stronger default enforcement; this release ships no
+default state-mutating hook and only contracts the empty posture as intentional.
 
 We do **not** ship an active `PreToolUse` gate by default because a hook that blocks
 or rewrites tool calls changes the user's runtime behavior, and this plugin should

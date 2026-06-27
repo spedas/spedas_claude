@@ -215,6 +215,70 @@ def main() -> int:
         (p / ".mcp.json").write_text(json.dumps(mcp_json, indent=2))
         expect_pass(p, "mcp compatible-release requirement passes")
 
+        # --- Batch U (#6): the empty-hooks intentional-deferred posture contract. ---
+
+        # 20) The healthy tree carries the sidecar posture contract; an empty
+        #     hooks/hooks.json WITH the contract passes (the intended steady state).
+        p = copy_plugin(base / "c20")
+        assert (p / "hooks" / "default_posture.json").exists(), "fixture missing posture sidecar"
+        assert json.loads((p / "hooks" / "hooks.json").read_text())["hooks"] == []
+        expect_pass(p, "empty hooks with deferred-posture contract passes")
+
+        # 21) Empty hooks/hooks.json WITHOUT the posture contract must fail — an
+        #     unexplained empty array is ambiguous (deferred vs. regression).
+        p = copy_plugin(base / "c21")
+        (p / "hooks" / "default_posture.json").unlink()
+        expect_fail(p, "empty hooks without posture contract", "default_posture.json")
+
+        # 22) A posture contract that no longer declares the deferred intent must
+        #     fail (a gutted/half-edited contract is as bad as a missing one).
+        p = copy_plugin(base / "c22")
+        sidecar = p / "hooks" / "default_posture.json"
+        sd = json.loads(sidecar.read_text())
+        sd["spedas_default_hook_posture"] = "enabled"
+        sidecar.write_text(json.dumps(sd, indent=2))
+        expect_fail(p, "posture contract not declaring deferred", "deferred")
+
+        # 23) A posture contract that drops the issue #6 reference must fail — the
+        #     deferred posture must stay traceable to the issue.
+        p = copy_plugin(base / "c23")
+        sidecar = p / "hooks" / "default_posture.json"
+        sd = json.loads(sidecar.read_text())
+        sd.pop("issue", None)
+        sd = json.loads(json.dumps(sd).replace("#6", "#0").replace("/issues/6", "/issues/0"))
+        sidecar.write_text(json.dumps(sd, indent=2))
+        expect_fail(p, "posture contract missing issue #6 reference", "issue #6")
+
+        # 24) The opt-in example the contract advertises must really exist; deleting
+        #     it (so the "enable it yourself" path is dead) must fail.
+        p = copy_plugin(base / "c24")
+        (p / "hooks" / "examples" / "pretooluse-fetch-guard.md").unlink()
+        expect_fail(p, "posture contract opt-in example removed", "opt_in_example")
+
+        # 25) A doc the contract claims explains the posture must exist; removing it
+        #     must fail (docs/safety.md is referenced by the contract).
+        p = copy_plugin(base / "c25")
+        (p / "docs" / "safety.md").unlink()
+        expect_fail(p, "posture contract doc removed", "safety.md")
+
+        # 26) A contract without expected_hooks_json must fail: without the expected
+        #     shape, the validator cannot prove the sidecar matches the shipped hooks.
+        p = copy_plugin(base / "c26")
+        sidecar = p / "hooks" / "default_posture.json"
+        sd = json.loads(sidecar.read_text())
+        sd.pop("expected_hooks_json", None)
+        sidecar.write_text(json.dumps(sd, indent=2))
+        expect_fail(p, "posture contract missing expected_hooks_json", "expected_hooks_json")
+
+        # 27) A stale contract whose expected_hooks_json no longer matches the
+        #     shipped hooks/hooks.json must fail (drift between contract and reality).
+        p = copy_plugin(base / "c27")
+        sidecar = p / "hooks" / "default_posture.json"
+        sd = json.loads(sidecar.read_text())
+        sd["expected_hooks_json"] = {"hooks": "not-empty-and-not-matching"}
+        sidecar.write_text(json.dumps(sd, indent=2))
+        expect_fail(p, "stale posture contract expected_hooks_json", "default_posture.json")
+
 
     print("\nAll validator tests passed.")
     return 0
