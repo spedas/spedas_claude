@@ -1,0 +1,13 @@
+{
+  "$comment": "Sidecar contract (NOT a Claude Code hook file). It records that hooks/hooks.json ships intentionally empty. Kept separate from hooks/hooks.json so the Claude plugin hook schema stays minimal/unpolluted. The validator (scripts/validate_plugin.py) asserts this file exists and is consistent whenever hooks/hooks.json is the empty placeholder, so an empty array can never be silently read as a regression. See issue #6.",
+  "spedas_default_hook_posture": "deferred",
+  "issue": "https://github.com/spedas/spedas_claude/issues/6",
+  "rationale": "Enabled-by-default PreToolUse gates change the user's runtime behavior (blocking/rewriting tool calls). This plugin must not mutate that behavior without an explicit opt-in, so no default state-mutating hook is shipped. The metadata-first / plan-before-fetch discipline is enforced through prose (skill + commands), per-CLI --allowedTools scoping, and the docs below. A stronger enabled-by-default gate remains a maintainer/product decision; issue #6 stays open for it.",
+  "expected_hooks_json": { "hooks": [] },
+  "opt_in_example": "hooks/examples/pretooluse-fetch-guard.md",
+  "opt_in_guard_script": "hooks/examples/fetch_guard.py",
+  "docs": [
+    "hooks/README.md",
+    "docs/safety.md"
+  ]
+}

@@ -382,10 +382,25 @@ def validate_reproducibility_and_example() -> None:
 
 
 def validate_hooks_placeholder_intentional() -> None:
-    """#6: assert hooks/hooks.json is a *deliberate* empty placeholder OR a valid
-    hooks object — never a malformed/half-edited file. The structural check lives in
-    validate_hooks(); this records that an empty array is an accepted, documented
-    state (hooks/README.md explains why) rather than a regression.
+    """#6: assert an empty ``hooks/hooks.json`` is a *deliberate, contracted* posture,
+    never a silently-accepted blank.
+
+    The structural check (valid JSON, ``hooks`` is an object/list) lives in
+    ``validate_hooks()``. This function adds the *intent* contract: when the shipped
+    ``hooks/hooks.json`` is the empty placeholder (``{"hooks": []}`` or ``{}``), a
+    machine-readable sidecar (``hooks/default_posture.json``) and the human docs that
+    explain the choice MUST be present and consistent. That makes three failure modes
+    loud rather than silent:
+
+    - an empty hooks file with **no** posture contract (ambiguous: deferred or a
+      regression?);
+    - a posture contract that does **not** declare the deferred intent / name #6 /
+      point at the opt-in example (a half-edited or gutted contract);
+    - accidental removal of the docs or the opt-in example the contract references.
+
+    A *non-empty* ``hooks/hooks.json`` is treated as an enabled hook config and is
+    only structurally validated by ``validate_hooks()`` — this contract does not block
+    a future maintainer from shipping a real default hook.
     """
     p = ROOT / "hooks" / "hooks.json"
     if not p.exists():
@@ -395,11 +410,56 @@ def validate_hooks_placeholder_intentional() -> None:
     except Exception:
         return  # validate_hooks() already reports malformed JSON.
     hooks = data.get("hooks")
-    # Empty list/dict = intentional placeholder (documented in hooks/README.md).
-    # Non-empty = an enabled hook config, which validate_hooks() structurally checks.
-    if hooks in ([], {}) and not (ROOT / "hooks" / "README.md").exists():
+    # Non-empty => an enabled hook config; validate_hooks() already checks structure.
+    if hooks not in ([], {}):
+        return
+
+    # --- Empty placeholder: require the explicit, consistent deferred contract. ---
+    readme = ROOT / "hooks" / "README.md"
+    if not readme.exists():
         fail("hooks/hooks.json is an empty placeholder but hooks/README.md is missing; "
              "document the intent (issue #6) so the empty array is not read as a regression")
+
+    sidecar_rel = "hooks/default_posture.json"
+    sidecar = ROOT / "hooks" / "default_posture.json"
+    if not sidecar.exists():
+        fail(f"hooks/hooks.json is the empty placeholder but the intentional-deferred "
+             f"posture contract {sidecar_rel} is missing; an empty hooks array must be "
+             f"explicitly contracted as intentional (issue #6), not silently accepted")
+        return
+    try:
+        posture = json.loads(sidecar.read_text(encoding="utf-8"))
+    except Exception as exc:
+        fail(f"invalid JSON in {sidecar_rel}: {exc}")
+        return
+
+    if posture.get("spedas_default_hook_posture") != "deferred":
+        fail(f"{sidecar_rel} must declare \"spedas_default_hook_posture\": \"deferred\" "
+             f"while hooks/hooks.json ships empty (issue #6)")
+    # The contract must name issue #6 somewhere so the empty array is traceable.
+    if "#6" not in json.dumps(posture) and "/issues/6" not in json.dumps(posture):
+        fail(f"{sidecar_rel} must reference issue #6 so the deferred posture is traceable")
+    # The contract must record the expected empty hooks shape and match reality.
+    expected = posture.get("expected_hooks_json")
+    if not isinstance(expected, dict):
+        fail(f"{sidecar_rel} must include an object 'expected_hooks_json' matching the "
+             f"shipped empty hooks/hooks.json placeholder (issue #6)")
+    elif expected.get("hooks") not in ([], {}):
+        fail(f"{sidecar_rel} 'expected_hooks_json' must describe the empty placeholder")
+    elif expected != data:
+        fail(f"{sidecar_rel} 'expected_hooks_json' does not match the shipped hooks/hooks.json; "
+             f"the contract is stale relative to the actual hooks file (issue #6)")
+    # The opt-in path the contract advertises must really exist, or the "enable it
+    # yourself" escape hatch is a dead reference.
+    opt_in = posture.get("opt_in_example")
+    if not isinstance(opt_in, str) or not opt_in.strip():
+        fail(f"{sidecar_rel} must name an 'opt_in_example' (the disabled-by-default hook the user can enable)")
+    elif not (ROOT / _strip_dotslash(opt_in)).exists():
+        fail(f"{sidecar_rel} 'opt_in_example' -> {opt_in!r} does not resolve to an existing file")
+    # Every doc the contract claims explains the posture must exist.
+    for doc in posture.get("docs", []):
+        if isinstance(doc, str) and doc.strip() and not (ROOT / _strip_dotslash(doc)).exists():
+            fail(f"{sidecar_rel} lists doc {doc!r} for the deferred posture, but it is missing")
 
 
 def validate_metadata(data: dict) -> None:
