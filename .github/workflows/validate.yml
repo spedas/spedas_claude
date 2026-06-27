@@ -45,6 +45,21 @@ jobs:
         run: python scripts/test_validate_plugin.py
       - name: Smoke tool-group self-tests (offline)
         run: python scripts/test_smoke_groups.py
+      # Issue #5: cross-platform cache-path portability. The pure self-tests
+      # simulate POSIX/macOS/native-Windows env from any host, and the offline
+      # --cache-diagnostics check proves how the packaged ${HOME}/.cache/... values
+      # actually resolve on THIS runner's OS — cheaply, with no server start, no
+      # disk write, and no network. This is the per-OS evidence the full runtime
+      # smoke (Linux-only) could not provide.
+      - name: Cache-path portability self-tests (offline, all OS)
+        run: python scripts/test_cache_paths.py
+      - name: Cache-path diagnostics on this OS (offline, report-only)
+        # --report-only because native-Windows runners legitimately have HOME unset,
+        # so the packaged ${HOME}/.cache/... value is *expected* to show unresolved
+        # there. This step captures that per-OS evidence without failing the build;
+        # the strict, build-failing assertions live in the self-tests above, which
+        # simulate every OS deterministically from any runner.
+        run: python scripts/smoke_mcp_runtime.py --cache-diagnostics --report-only --json
 
   # Runtime smoke (issue #16): launches the real spedas-mcp server and verifies
   # the tool groups. Linux-only and tightly bounded so a hung handshake or a

@@ -90,10 +90,29 @@ this repo can guarantee**, the safe, portable approach on any OS is to set an
 "XHELIO_CDAWEB_CACHE_DIR": "C:/Users/you/AppData/Local/spedas/cdaweb"
 ```
 
-To **verify** what the server actually resolved, run the runtime smoke and inspect
-the directories it reports / creates, or check that the cache directory fills after
-a real (opt-in) fetch. If the cache stays empty across runs, expansion or
-writability is the likely cause (see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md)).
+To **verify** what the server actually resolved, run the offline cache-path
+diagnostic — it expands the `.mcp.json` cache vars against *your current
+environment* without starting the server, downloading anything, or writing to disk,
+and tells you whether `${HOME}` actually resolved on your OS:
+
+```bash
+# Works on macOS / Linux / Windows. Exits non-zero if any cache path stayed an
+# unresolved literal (e.g. a bare ${HOME} on native Windows where HOME is unset).
+python scripts/smoke_mcp_runtime.py --cache-diagnostics
+```
+
+It prints, per variable, the **raw** configured value, the **expanded** value, any
+**unresolved** `${HOME}` / `%USERPROFILE%` tokens, and path-flavor caveats (e.g.
+mixed `\`/`/` separators on a Windows drive path). If a line shows
+`UNRESOLVED: ${HOME}`, switch that directory to an **absolute path** as shown above.
+CI runs this same check on `ubuntu-latest`, `macos-latest`, and `windows-latest`
+(see `.github/workflows/validate.yml`), and the pure cross-platform behaviour is
+self-tested in `scripts/test_cache_paths.py`.
+
+You can also run the full runtime smoke and inspect the directories it reports /
+creates, or check that the cache directory fills after a real (opt-in) fetch. If
+the cache stays empty across runs, expansion or writability is the likely cause
+(see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md)).
 
 ## 3. Advanced: runtime / developer / debug knobs
 
