@@ -10,7 +10,7 @@ apart (issues #25, #26).
 Design constraints (unchanged from the two original scripts):
 
 * **No hard dependency on the ``mcp`` Python package.** The wrapper repo ships no
-  ``mcp`` install; the server is resolved at runtime via ``uvx --with mcp>=1.26.0``
+  ``mcp`` install; the server is resolved at runtime via ``uvx --with mcp>=1.26.0,<2``
   (see ``.mcp.json`` / ``docs/dependencies.md``). So this module *opportunistically*
   imports ``mcp`` for its protocol-version constant but never requires it.
 * **One JSON object per line** stdio framing, no extra client dependency.
@@ -41,7 +41,7 @@ def negotiated_protocol_version() -> str:
        or compatibility debugging.
     2. ``mcp.types.LATEST_PROTOCOL_VERSION`` when the optional client package is
        importable in this wrapper interpreter.
-    3. A single documented fallback matching the current ``mcp>=1.26.0`` server
+    3. A single documented fallback matching the current ``mcp>=1.26.0,<2`` server
        dependency used by ``spedas_mcp``.
 
     The initialize request must always include ``protocolVersion``: the real

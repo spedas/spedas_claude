@@ -1,20 +1,26 @@
 # Dependencies and reproducibility
 
 This document records how `spedas_claude` resolves its one runtime dependency,
-the `spedas_mcp` MCP server, and how to pin it for reproducible deployments. It
-addresses the reproducibility/provenance concern in issue #3.
+the `spedas_mcp` MCP server, and how it is pinned for reproducible, auditable
+deployments. It addresses the reproducibility/provenance concern in issue #3.
+
+> The authoritative pinned triple (`spedas-claude` ↔ `spedas_mcp` commit ↔ MCP
+> range), the verification command, the bump procedure, and the supply-chain
+> trust model live in [`COMPATIBILITY.md`](../COMPATIBILITY.md). This document is
+> the narrative companion.
 
 ## Runtime dependency: `spedas_mcp`
 
-`.mcp.json` launches the MCP server with `uvx`:
+`.mcp.json` launches the MCP server with `uvx`, **pinned** to an exact upstream
+commit and a **bounded** MCP protocol range:
 
 ```jsonc
 {
   "mcpServers": {
     "spedas": {
       "command": "uvx",
-      "args": ["--with", "mcp>=1.26.0",
-               "--from", "git+https://github.com/spedas/spedas_mcp.git",
+      "args": ["--with", "mcp>=1.26.0,<2",
+               "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
                "spedas-mcp"]
     }
   }
@@ -24,66 +30,69 @@ addresses the reproducibility/provenance concern in issue #3.
 | Field | Value | Notes |
 |---|---|---|
 | Source repo | `https://github.com/spedas/spedas_mcp.git` | official SPEDAS org repo |
-| Ref | default branch (floating) | no explicit `@ref` — resolves to the repo's current default branch HEAD |
+| Ref | `4afdae39bda2ee11e27606809491b4d642e8ecc9` (full SHA) | content-addressed commit pin — reproducible, auditable |
 | Package name | `spedas-mcp` (`0.1.0` at time of writing) | from `spedas_mcp/pyproject.toml` |
 | Console script | `spedas-mcp` | `[project.scripts] spedas-mcp = "spedas_mcp:main"` |
 | Python | `>=3.10` | `requires-python` in `spedas_mcp/pyproject.toml` |
-| MCP protocol dep | `mcp>=1.26.0` | matches `spedas_mcp`'s own optional `mcp` extra; pinned as a floor here so the plugin asserts a known-good MCP version |
+| MCP protocol dep | `mcp>=1.26.0,<2` | floor matches `spedas_mcp`'s own `mcp` extra; upper bound `<2` blocks a breaking `mcp 2.x` from being pulled silently |
 
-## Why the default is intentionally *not* pinned to an exact commit
+## Why the default is pinned (and was changed from floating)
 
-Pinning `--from git+...@<sha>` makes a plain clone + smoke depend on a specific
-`spedas_mcp` commit existing and matching the plugin's expected tool surface.
-Because `spedas_claude` and `spedas_mcp` are two separate repos with independent
-release cadences, a hard pin in the default config would require coordinating a
-tag/commit bump across both repos on every `spedas_mcp` change, and would break
-the "clone and try it now" onboarding flow (issue #12) whenever the pinned commit
-drifts from what a new user expects.
+Earlier revisions of this plugin intentionally **floated** on the `spedas_mcp`
+default branch, on the theory that the runtime smoke would catch any tool-surface
+change. Issue #3 corrects that posture: floating HEAD means every invocation —
+from Claude Code, CI, or a researcher's terminal — runs whatever currently sits
+at `spedas/spedas_mcp@main`, with no commit pin and no audit trail. A paper
+citing a SPEDAS MCP workflow could not be reproduced years later, and an
+accidental (or malicious) upstream change would reach every user instantly with
+no recovery path.
 
-So the default floats on the `spedas_mcp` default branch. The packaging validator
-(`scripts/validate_plugin.py`) and the runtime smoke (`scripts/smoke_mcp_runtime.py`)
-together catch the failure mode a pin would otherwise prevent: if the floating
-HEAD changes the tool surface, the smoke's `missing_core_tools` becomes non-empty
-and CI fails.
+The default is therefore now pinned to a full commit SHA. Reproducibility and
+provenance win over the convenience of auto-tracking upstream. Coordinating a
+bump across the two repos is a deliberate, reviewed action (see the bump
+procedure in [`COMPATIBILITY.md`](../COMPATIBILITY.md)), not an implicit
+every-run resolution.
 
-## Recorded resolved source/HEAD (provenance snapshot)
+The packaging validator (`scripts/validate_plugin.py`) now **enforces** this: it
+fails if the `spedas_mcp` source regresses to an unpinned git URL, or if the MCP
+requirement loses its upper bound. The runtime smoke
+(`scripts/smoke_mcp_runtime.py`) additionally prints a dependency-audit object
+and verifies the pinned server exposes the expected tool surface.
 
-At the time this document was written, the locally available `spedas_mcp` mirror
-resolved to:
+## Recorded resolved source/HEAD (verified provenance)
 
-- Repo: `github.com/spedas/spedas_mcp` (also mirrored at `github.com/huangzesen/spedas-mcp`)
-- Branch: `main`
-- HEAD (from the local mirror): `e333a1e376b2f16c967af04467b573c9c82a2dbd`
-  (`docs: add Juno PDS SPICE workflow (#4)`)
-- Package version: `spedas-mcp 0.1.0`
+The pinned commit was verified against the official upstream at pin time:
 
-> **Caveat (unproven):** this HEAD was read from a local development mirror whose
-> `main` may be ahead of, behind, or otherwise diverged from `spedas/spedas_mcp`
-> `main` on GitHub. It is recorded here as a provenance anchor, **not** as a
-> verified upstream commit. Before relying on it as a pin, confirm the exact
-> upstream SHA with:
->
-> ```bash
-> git ls-remote https://github.com/spedas/spedas_mcp.git HEAD
-> ```
+- Repo: `github.com/spedas/spedas_mcp`
+- Pinned commit: `4afdae39bda2ee11e27606809491b4d642e8ecc9`
+- Verified with: `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD`
+  (the upstream default-branch HEAD resolved to this SHA at pin time)
+- Package version at this commit: `spedas-mcp 0.1.0`
+- Runtime smoke against this pin: `ok: true`, `tool_count: 40`, empty
+  `missing_core_tools`/`missing_groups`
 
-## How to pin for a reproducible deployment
+To re-verify the pin still exists upstream, query the commit object (or open the
+GitHub tree URL). Do not rely on `git ls-remote <url> <sha>` for bare commit
+existence, because only advertised refs are guaranteed to appear there:
 
-When you need byte-for-byte reproducibility (e.g. a tagged release or an offline
-lab), pin the exact ref in `.mcp.json`:
-
-```jsonc
-"--from", "git+https://github.com/spedas/spedas_mcp.git@<commit-or-tag>"
+```bash
+gh api repos/spedas/spedas_mcp/commits/4afdae39bda2ee11e27606809491b4d642e8ecc9 >/dev/null
 ```
 
-Recommended procedure:
+## How to bump the pin for a new deployment
+
+See the full bump procedure and supply-chain trust model in
+[`COMPATIBILITY.md`](../COMPATIBILITY.md). In short:
 
 1. Resolve the upstream commit you want:
    `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD`
-2. Set `--from git+https://github.com/spedas/spedas_mcp.git@<sha>` in `.mcp.json`.
+2. Review the upstream diff, then set
+   `--from git+https://github.com/spedas/spedas_mcp.git@<sha>` in `.mcp.json`.
 3. Run `python scripts/smoke_mcp_runtime.py --json` and confirm `ok: true` with an
-   empty `missing_core_tools`.
-4. Record the pinned `<sha>` and the smoke's `tool_count` in your release notes.
+   empty `missing_core_tools`; note the reported `tool_count`.
+4. Update the triple in `COMPATIBILITY.md`, the `CHANGELOG.md` table, and this
+   document; record the pinned `<sha>` and `tool_count` in your release notes.
 
-Optionally also pin the MCP protocol dependency to an exact version
-(`--with mcp==<version>`) instead of the `>=` floor for full determinism.
+Optionally pin the MCP protocol dependency to an exact version
+(`--with mcp==<version>`) instead of the bounded `>=…,<2` range for full
+determinism.

@@ -28,7 +28,7 @@ Error appears
 
 First triage command for A vs. B/C: run the offline validator and the runtime
 smoke (below). If the smoke can't even list tools, you are in class A. If it lists
-26 tools cleanly but a real call fails, you are in B/C/D.
+40 tools cleanly but a real call fails, you are in B/C/D.
 
 ```bash
 python3 scripts/validate_plugin.py            # packaging/layout only (offline)
@@ -45,7 +45,7 @@ science tool runs.
 | Signal | Likely cause | Fix |
 |---|---|---|
 | `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide (https://docs.astral.sh/uv/getting-started/installation/); reopen shell |
-| Smoke hangs/times out on first run | `uvx` resolving `spedas_mcp` from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with mcp>=1.26.0 --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help`, matching `.mcp.json`) |
+| Smoke hangs/times out on first run | `uvx` resolving the pinned `spedas_mcp` commit from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with 'mcp>=1.26.0,<2' --from git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9 spedas-mcp --help`, matching `.mcp.json`) |
 | `Failed to spawn` / `Permission denied` writing cache or temp | `UV_CACHE_DIR` / `XDG_CACHE_HOME` / `TMPDIR` or a cache dir is read-only / over quota | point them at a writable path ([`configuration.md`](../../../docs/configuration.md)); the smoke auto-falls-back, real runs do not |
 | `No solution found` / cannot resolve `spedas_mcp` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
 | `missing_core_tools` non-empty in the smoke | resolved `spedas_mcp` HEAD changed its tool surface | confirm/pin a known-good `spedas_mcp` ref ([`dependencies.md`](../../../docs/dependencies.md)) |

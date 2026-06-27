@@ -131,18 +131,34 @@ download, and isolates SPEDAS data/kernel caches in a temp directory. It still
 uses your normal `uv` build cache unless you set `UV_CACHE_DIR` yourself; the
 first run can be slow because `uvx` resolves `spedas_mcp` from GitHub.
 
-Expected success (`ok: true`, `tool_count: 26`, empty `missing_core_tools`, empty
-`missing_groups`):
+The `--json` output also includes a `dependency_audit` object (issue #3): the
+configured git URL, the pinned `spedas_mcp` commit, whether the source is pinned,
+the MCP requirement and whether it is upper-bounded — an audit trail you can
+record in release/methods notes — plus a `cache_diagnostics` object reporting the
+resolved cache paths and their writability for the smoke subprocess.
+
+Expected success (`ok: true`, `tool_count: 40` against the pinned commit, empty
+`missing_core_tools`, empty `missing_groups`):
 
 ```json
 {
   "ok": true,
-  "tool_count": 26,
+  "tool_count": 40,
   "missing_core_tools": [],
   "missing_groups": [],
+  "dependency_audit": {
+    "resolved_spedas_mcp_commit": "4afdae39bda2ee11e27606809491b4d642e8ecc9",
+    "ref_kind": "commit",
+    "is_pinned": true,
+    "mcp_requirement": "mcp>=1.26.0,<2",
+    "mcp_has_upper_bound": true
+  },
   ...
 }
 ```
+
+The exact `tool_count` is fixed by the pinned `spedas_mcp` commit; if you bump the
+pin, re-run the smoke and update this number (see [`COMPATIBILITY.md`](COMPATIBILITY.md)).
 
 Pass `--skip-group-check` to verify only the core tools (e.g. while a backend is
 mid-migration). For copy-ready tool arguments and return shapes, see the skill
@@ -217,27 +233,29 @@ the plugin root is a hard error.
 
 ```jsonc
 "command": "uvx",
-"args": ["--with", "mcp>=1.26.0",
-         "--from", "git+https://github.com/spedas/spedas_mcp.git",
+"args": ["--with", "mcp>=1.26.0,<2",
+         "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
          "spedas-mcp"]
 ```
 
 - **Source:** the official `git+https://github.com/spedas/spedas_mcp.git`,
-  default branch. `uvx` resolves and caches it on first run.
-- **MCP protocol dependency:** `mcp>=1.26.0` (floor, matching `spedas_mcp`'s own
-  `pyproject.toml`).
+  **pinned** to commit `4afdae39bda2ee11e27606809491b4d642e8ecc9` (a full SHA, so
+  it is content-addressed and reproducible). `uvx` resolves and caches it on first
+  run.
+- **MCP protocol dependency:** `mcp>=1.26.0,<2` (floor matches `spedas_mcp`'s own
+  `pyproject.toml`; the `<2` upper bound blocks a breaking `mcp 2.x` from being
+  pulled silently).
 - **Entry point:** the `spedas-mcp` console script.
 
-This default intentionally **floats** on the `spedas_mcp` default branch so a
-plain clone + smoke works without coordinating tags across two repos. For a fully
-reproducible/pinned deployment, append an exact git ref to the `--from` URL, e.g.
+The default is **pinned** for reproducibility and provenance (issue #3): every
+install resolves the same audited commit, so a cited workflow can be reproduced
+later and an institution can review the exact upstream code before rollout. To
+move to a newer `spedas_mcp`, follow the reviewed bump procedure rather than
+floating on `main`.
 
-```jsonc
-"--from", "git+https://github.com/spedas/spedas_mcp.git@<commit-or-tag>"
-```
-
-See [`docs/dependencies.md`](docs/dependencies.md) for the recorded resolved
-source/HEAD and the exact pinning recipe, and the caveat about which ref to pin.
+See [`COMPATIBILITY.md`](COMPATIBILITY.md) for the authoritative pinned triple,
+the verification command, the bump procedure, and the supply-chain trust model,
+and [`docs/dependencies.md`](docs/dependencies.md) for the narrative companion.
 
 ## Local validation (summary)
 

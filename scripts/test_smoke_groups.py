@@ -177,6 +177,86 @@ def test_skip_group_check_render_is_not_missing() -> None:
     print("PASS: --skip-group-check render shows 'skipped', never MISSING")
 
 
+def test_dependency_audit_parses_pinned_sha() -> None:
+    # Issue #3: the audit object must report the pinned commit and a bounded MCP req
+    # from .mcp.json args alone, no network.
+    server = {
+        "args": [
+            "--with", "mcp>=1.26.0,<2",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+            "spedas-mcp",
+        ],
+    }
+    audit = smoke._parse_dependency_audit(server)
+    assert audit["is_spedas_mcp_source"], audit
+    assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_mcp.git", audit
+    assert audit["pinned_ref"] == "4afdae39bda2ee11e27606809491b4d642e8ecc9", audit
+    assert audit["ref_kind"] == "commit", audit
+    assert audit["is_pinned"] is True, audit
+    assert audit["resolved_spedas_mcp_commit"] == "4afdae39bda2ee11e27606809491b4d642e8ecc9", audit
+    assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
+    assert audit["mcp_has_upper_bound"] is True, audit
+    assert audit["entrypoint"] == "spedas-mcp", audit
+    print("PASS: dependency audit parses a pinned full SHA + bounded mcp req")
+
+
+def test_dependency_audit_detects_floating_and_unbounded() -> None:
+    # A floating source (no @ref) and an open-ended mcp floor must be flagged.
+    server = {
+        "args": [
+            "--with", "mcp>=1.26.0",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git",
+            "spedas-mcp",
+        ],
+    }
+    audit = smoke._parse_dependency_audit(server)
+    assert audit["pinned_ref"] is None, audit
+    assert audit["ref_kind"] == "floating", audit
+    assert audit["is_pinned"] is False, audit
+    assert audit["resolved_spedas_mcp_commit"] is None, audit
+    assert audit["mcp_has_upper_bound"] is False, audit
+    print("PASS: dependency audit flags floating source + unbounded mcp")
+
+
+def test_dependency_audit_does_not_treat_ssh_userinfo_as_pin() -> None:
+    # user@host in an SSH URL is not a ref pin. The ref delimiter must come after
+    # the repository path.
+    server = {
+        "args": [
+            "--with", "mcp~=1.26.0",
+            "--from", "git+ssh://git@github.com/spedas/spedas_mcp.git",
+            "spedas-mcp",
+        ],
+    }
+    audit = smoke._parse_dependency_audit(server)
+    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_mcp.git", audit
+    assert audit["pinned_ref"] is None, audit
+    assert audit["ref_kind"] == "floating", audit
+    assert audit["is_pinned"] is False, audit
+    assert audit["mcp_requirement"] == "mcp~=1.26.0", audit
+    assert audit["mcp_has_upper_bound"] is True, audit
+    print("PASS: dependency audit rejects SSH userinfo as a pin and handles ~=")
+
+
+def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:
+    # A tag pin is reproducible-ish (pinned) but not a content-addressed commit.
+    server = {
+        "args": [
+            "--with", "mcp==1.26.0",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@v0.2.0",
+            "spedas-mcp",
+        ],
+    }
+    audit = smoke._parse_dependency_audit(server)
+    assert audit["pinned_ref"] == "v0.2.0", audit
+    assert audit["ref_kind"] == "tag", audit
+    assert audit["is_pinned"] is True, audit
+    assert audit["resolved_spedas_mcp_commit"] is None, audit
+    # exact == also counts as upper-bounded for the protocol dep.
+    assert audit["mcp_has_upper_bound"] is True, audit
+    print("PASS: dependency audit treats a tag ref as pinned (not a commit)")
+
+
 def main() -> int:
     test_all_groups_present()
     test_missing_geometry_group_detected()
@@ -187,6 +267,10 @@ def main() -> int:
     test_protocol_version_fallback_when_mcp_unavailable()
     test_report_stderr_surfaces_empty_exit()
     test_skip_group_check_render_is_not_missing()
+    test_dependency_audit_parses_pinned_sha()
+    test_dependency_audit_detects_floating_and_unbounded()
+    test_dependency_audit_does_not_treat_ssh_userinfo_as_pin()
+    test_dependency_audit_tag_ref_is_pinned_not_commit()
     print("\nAll smoke group tests passed.")
     return 0
 
