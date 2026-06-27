@@ -4,9 +4,9 @@
       "command": "uvx",
       "args": [
         "--with",
-        "mcp>=1.26.0",
+        "mcp>=1.26.0,<2",
         "--from",
-        "git+https://github.com/spedas/spedas_mcp.git",
+        "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
         "spedas-mcp"
       ],
       "env": {

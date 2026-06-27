@@ -1,16 +1,18 @@
 # Fetch & kernel safety boundary
 
-This plugin exposes the full SPEDAS MCP tool surface (26 tools), including tools
-that perform **real network downloads**: mission data products and SPICE kernels.
-This document defines the safety boundary, the opt-in language to use, and what to
-do before enabling real fetches. It addresses issue #6 (fetch/kernel safety) and is
-the runbook the (currently intentional-empty) `hooks/hooks.json` plan refers to.
+This plugin exposes the full SPEDAS MCP tool surface (40 tools at the pinned
+`spedas_mcp` commit), including tools that perform **real network downloads**:
+mission data products and SPICE kernels. This document defines the safety
+boundary, the opt-in language to use, and what to do before enabling real
+fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook the
+(currently intentional-empty) `hooks/hooks.json` plan refers to.
 
-> **Caveat:** the 26 tools and their fetch/kernel behavior live in the upstream
-> `spedas_mcp` server, which `.mcp.json` resolves from a **floating default branch
-> (unpinned)**. Upstream changes can alter what counts as a fetch/kernel tool, so
-> re-verify this boundary after `spedas_mcp` updates — and pin a known-good ref when
-> you need it fixed (see [`dependencies.md`](dependencies.md)).
+> **Caveat:** the tools and their fetch/kernel behavior live in the upstream
+> `spedas_mcp` server, which `.mcp.json` now resolves from a **pinned commit**
+> (`4afdae39bda2ee11e27606809491b4d642e8ecc9`). The pin makes the tool surface
+> stable per install; re-verify this boundary whenever you **bump** the pin, since
+> a new commit can alter what counts as a fetch/kernel tool (see
+> [`COMPATIBILITY.md`](../COMPATIBILITY.md) and [`dependencies.md`](dependencies.md)).
 
 ## The boundary: discovery is safe, fetch is opt-in
 

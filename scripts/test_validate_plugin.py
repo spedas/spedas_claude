@@ -76,6 +76,32 @@ def main() -> int:
         mcp.write_text(json.dumps(data))
         expect_fail(p, "wrong MCP source", "github.com/spedas/spedas_mcp")
 
+        # 2b) Issue #3: an UNPINNED spedas_mcp git URL (no @ref) must fail — a
+        #     floating default-branch HEAD is not reproducible.
+        p = copy_plugin(base / "c2b")
+        mcp = p / ".mcp.json"
+        data = json.loads(mcp.read_text())
+        data["mcpServers"]["spedas"]["args"] = [
+            "--with", "mcp>=1.26.0,<2",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git",
+            "spedas-mcp",
+        ]
+        mcp.write_text(json.dumps(data))
+        expect_fail(p, "unpinned spedas_mcp source", "PINNED")
+
+        # 2c) Issue #3: an MCP requirement with no upper bound must fail — a future
+        #     breaking 2.x could be pulled silently.
+        p = copy_plugin(base / "c2c")
+        mcp = p / ".mcp.json"
+        data = json.loads(mcp.read_text())
+        data["mcpServers"]["spedas"]["args"] = [
+            "--with", "mcp>=1.26.0",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+            "spedas-mcp",
+        ]
+        mcp.write_text(json.dumps(data))
+        expect_fail(p, "mcp requirement missing upper bound", "upper bound")
+
         # 3) Declared resource path that does not resolve relative to plugin root
         #    (this is exactly the issue #4 ambiguity made into a hard error).
         p = copy_plugin(base / "c3")
@@ -134,6 +160,11 @@ def main() -> int:
         (p / "docs" / "dependencies.md").unlink()
         expect_fail(p, "missing docs/dependencies.md", "docs/dependencies.md")
 
+        # 12b) Issue #3: the root COMPATIBILITY.md anchor must exist.
+        p = copy_plugin(base / "c12b")
+        (p / "COMPATIBILITY.md").unlink()
+        expect_fail(p, "missing COMPATIBILITY.md", "COMPATIBILITY.md")
+
         # 13) Batch F (#32): the documented first-run example must exist
         #     (advertised in README and CHANGELOG).
         p = copy_plugin(base / "c13")
@@ -167,6 +198,22 @@ def main() -> int:
         cmd = p / "commands" / "data.md"
         cmd.write_text(cmd.read_text().replace("$ARGUMENTS", "the request"))
         expect_fail(p, "command missing $ARGUMENTS", "$ARGUMENTS")
+
+        # 18) Issue #3: SSH userinfo (git@host) is not a ref pin.
+        p = copy_plugin(base / "c18")
+        mcp_json = json.loads((p / ".mcp.json").read_text())
+        args = mcp_json["mcpServers"]["spedas"]["args"]
+        args[args.index("--from") + 1] = "git+ssh://git@github.com/spedas/spedas_mcp.git"
+        (p / ".mcp.json").write_text(json.dumps(mcp_json, indent=2))
+        expect_fail(p, "ssh userinfo is not a pin", "PINNED")
+
+        # 19) Issue #3: compatible-release syntax is an upper-bounded MCP requirement.
+        p = copy_plugin(base / "c19")
+        mcp_json = json.loads((p / ".mcp.json").read_text())
+        args = mcp_json["mcpServers"]["spedas"]["args"]
+        args[args.index("--with") + 1] = "mcp~=1.26.0"
+        (p / ".mcp.json").write_text(json.dumps(mcp_json, indent=2))
+        expect_pass(p, "mcp compatible-release requirement passes")
 
 
     print("\nAll validator tests passed.")

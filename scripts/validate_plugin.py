@@ -25,6 +25,7 @@ relative base, and a missing/renamed resource.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -199,6 +200,83 @@ def validate_hooks(hooks_value) -> None:
         fail(f"{rel} 'hooks' must be an object (event->matchers) or an empty placeholder")
 
 
+_MCP_REQ_RE = re.compile(r"^mcp(?=[<>=!~])")
+
+
+def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
+    """Split a pip/uv git URL into (url_without_ref, ref).
+
+    A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
+    forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
+    ``@`` before the final slash; those must NOT be treated as pinned refs.
+    """
+    if not from_value.startswith("git+"):
+        return from_value, None
+    base, sep, fragment = from_value.partition("#")
+    at = base.rfind("@")
+    last_slash = base.rfind("/")
+    if at > last_slash:
+        ref = base[at + 1 :] or None
+        url = base[:at]
+        if sep:
+            url = f"{url}#{fragment}"
+        return url, ref
+    return from_value, None
+
+
+def _is_mcp_requirement(compact: str) -> bool:
+    return compact == "mcp" or bool(_MCP_REQ_RE.match(compact))
+
+
+def _mcp_has_upper_bound(compact: str) -> bool:
+    return "==" in compact or "<" in compact or "~=" in compact
+
+
+def _validate_mcp_pin(rel: str, args: list[str]) -> None:
+    """Issue #3: enforce that the spedas_mcp source is pinned and the MCP protocol
+    requirement is upper-bounded.
+
+    - The ``--from git+...spedas_mcp.git`` URL must carry a real final ``@<ref>``
+      pin (commit or tag) after the repository path. A bare URL resolves the
+      default branch HEAD on every run; an SSH userinfo ``git@host`` alone is not a
+      ref pin.
+    - The ``mcp`` requirement passed via ``--with`` must have an upper bound
+      (a ``<`` constraint, an exact ``==``, or compatible-release ``~=``);
+      open-ended ``mcp>=1.26.0`` allows a future breaking ``2.x`` to reach every
+      user silently.
+    """
+    def _value_after(flag: str) -> str | None:
+        for i, a in enumerate(args):
+            if a == flag and i + 1 < len(args):
+                return args[i + 1]
+        return None
+
+    from_value = _value_after("--from") or ""
+    if "spedas_mcp" in from_value:
+        # Require a ref pin appended after the repo path; do not accept user@host.
+        _, ref = _split_git_url_ref(from_value)
+        if not ref:
+            fail(
+                f"{rel}: spedas_mcp source must be PINNED to a commit or tag "
+                f"(git+https://github.com/spedas/spedas_mcp.git@<sha-or-tag>); "
+                f"a floating default-branch HEAD is not reproducible (issue #3)"
+            )
+
+    # Find the mcp requirement among --with values (e.g. "mcp>=1.26.0,<2").
+    mcp_req = None
+    for a in args:
+        compact = a.replace(" ", "")
+        if _is_mcp_requirement(compact):
+            mcp_req = compact
+            break
+    if mcp_req is not None and not _mcp_has_upper_bound(mcp_req):
+        fail(
+            f"{rel}: the MCP protocol requirement must have an upper bound "
+            f"(e.g. 'mcp>=1.26.0,<2' or 'mcp~=1.26.0'); an open-ended '{mcp_req}' "
+            f"allows a breaking major version to be pulled silently (issue #3)"
+        )
+
+
 def validate_mcp(mcp_value) -> None:
     if isinstance(mcp_value, str) and mcp_value.strip():
         if resolve_declared(mcp_value, kind="file", source_key="mcpServers") is None:
@@ -221,16 +299,23 @@ def validate_mcp(mcp_value) -> None:
         return
     if server.get("command") != "uvx":
         fail(f"{rel}: expected MCP command 'uvx' for a portable, no-clone install")
-    args = server.get("args") or []
-    joined = " ".join(a for a in args if isinstance(a, str))
+    args = [a for a in (server.get("args") or []) if isinstance(a, str)]
+    joined = " ".join(args)
     # Issue #3: the resolved spedas_mcp source must be the official repo and the
     # console entrypoint must be invoked. A wrong repo/entrypoint must fail CI.
     if "github.com/spedas/spedas_mcp" not in joined:
         fail(f"{rel}: spedas server must install from git+https://github.com/spedas/spedas_mcp.git")
     if "spedas-mcp" not in joined:
         fail(f"{rel}: spedas server must run the 'spedas-mcp' console script")
-    if "mcp>=" not in joined and "mcp==" not in joined.replace(" ", ""):
-        fail(f"{rel}: expected an explicit 'mcp>=...' floor for the MCP protocol dependency")
+    if not any(_is_mcp_requirement(a.replace(" ", "")) for a in args):
+        fail(f"{rel}: expected an explicit 'mcp>=...' / 'mcp~=...' / 'mcp==...' requirement for the MCP protocol dependency")
+
+    # Issue #3 reproducibility/auditability: the default spedas_mcp source must be
+    # PINNED (a git @<ref> on the --from URL), and the MCP protocol requirement
+    # must be UPPER-BOUNDED so a future breaking major (mcp 2.x) cannot be pulled
+    # silently. A regression to a floating HEAD or an open-ended floor fails CI.
+    _validate_mcp_pin(rel, args)
+
     env = server.get("env")
     if env is not None and not isinstance(env, dict):
         fail(f"{rel}: 'spedas' server env must be an object when present")
@@ -281,6 +366,10 @@ def validate_reproducibility_and_example() -> None:
     onboarding path.
     """
     require("docs/dependencies.md")        # pinning/reproducibility, cross-linked widely
+    # #3: the root compatibility/reproducibility anchor (pinned triple, verification
+    # command, bump procedure, supply-chain trust model). README/CHANGELOG/docs link
+    # to it; a missing target is a broken contract, so fail loudly.
+    require("COMPATIBILITY.md")
     example = require("examples/run_overview.py")  # documented first-run example (README/CHANGELOG)
     # The advertised example must byte-compile, or the onboarding path is broken.
     if example is not None:

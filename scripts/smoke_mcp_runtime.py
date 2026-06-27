@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -103,6 +104,142 @@ def _check_groups(tools: list[str]) -> dict[str, dict[str, Any]]:
         }
     return report
 
+
+# A full git commit SHA is 40 hex chars (or 64 for SHA-256). Anything shorter or
+# non-hex after the ``@`` is treated as a tag/branch ref, which is still pinned
+# (deterministic) but not a content-addressed commit.
+_FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$|^[0-9a-f]{64}$")
+_MCP_REQ_RE = re.compile(r"^mcp(?=[<>=!~])")
+
+
+def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
+    """Split a pip/uv git URL into (url_without_ref, ref).
+
+    A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
+    forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
+    ``@`` before the final slash; those must NOT be treated as pinned refs.
+    """
+    if not from_value.startswith("git+"):
+        return from_value, None
+    base, sep, fragment = from_value.partition("#")
+    at = base.rfind("@")
+    last_slash = base.rfind("/")
+    if at > last_slash:
+        ref = base[at + 1 :] or None
+        url = base[:at]
+        if sep:
+            url = f"{url}#{fragment}"
+        return url, ref
+    return from_value, None
+
+
+def _is_mcp_requirement(compact: str) -> bool:
+    return compact == "mcp" or bool(_MCP_REQ_RE.match(compact))
+
+
+def _mcp_has_upper_bound(compact: str) -> bool:
+    return "==" in compact or "<" in compact or "~=" in compact
+
+
+def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
+    """Derive a compact dependency-audit object from the configured server args.
+
+    This is issue #3's audit trail: from ``.mcp.json`` alone (no network) we can
+    report the configured ``spedas_mcp`` git URL, the pinned ref and whether it is
+    a full commit SHA / tag / floating default branch, the MCP protocol
+    requirement and whether it carries an upper bound, and the console entrypoint.
+
+    Because the default source is pinned to a full SHA, the parsed ``@<sha>`` is
+    the resolved ``spedas_mcp`` commit — no ``uv pip show`` / network call is
+    needed in the normal smoke path.
+    """
+    args = server.get("args") or []
+    args = [a for a in args if isinstance(a, str)]
+
+    def _value_after(flag: str) -> str | None:
+        for i, a in enumerate(args):
+            if a == flag and i + 1 < len(args):
+                return args[i + 1]
+        return None
+
+    # --from carries the git source (and optional @ref); the trailing bare arg is
+    # the console entrypoint.
+    from_value = _value_after("--from") or ""
+    git_url, pinned_ref = _split_git_url_ref(from_value)
+
+    is_spedas_mcp_source = "github.com/spedas/spedas_mcp" in from_value
+
+    if pinned_ref is None:
+        ref_kind = "floating"          # no @ref -> resolves default branch HEAD each run
+    elif _FULL_SHA_RE.match(pinned_ref):
+        ref_kind = "commit"            # content-addressed, fully reproducible
+    else:
+        ref_kind = "tag"               # tag/branch name: pinned but mutable upstream
+
+    # --with carries the MCP protocol requirement, e.g. "mcp>=1.26.0,<2".
+    mcp_requirement: str | None = None
+    for a in args:
+        compact = a.replace(" ", "")
+        if _is_mcp_requirement(compact):
+            mcp_requirement = a
+            break
+    has_upper_bound = bool(mcp_requirement) and _mcp_has_upper_bound(mcp_requirement.replace(" ", ""))
+
+    entrypoint = args[-1] if args else None
+
+    return {
+        "configured_git_url": git_url or None,
+        "from_arg": from_value or None,
+        "is_spedas_mcp_source": is_spedas_mcp_source,
+        "pinned_ref": pinned_ref,
+        "ref_kind": ref_kind,
+        "is_pinned": ref_kind != "floating",
+        "resolved_spedas_mcp_commit": pinned_ref if ref_kind == "commit" else None,
+        "mcp_requirement": mcp_requirement,
+        "mcp_has_upper_bound": has_upper_bound,
+        "entrypoint": entrypoint,
+    }
+
+
+def _cache_diagnostics(env: dict[str, str], tmp: Path) -> dict[str, Any]:
+    """Report resolved cache paths, temp-isolation status, and writability for the
+    smoke subprocess (issue #5 diagnostics).
+
+    For each SPEDAS data/kernel cache var plus UV/XDG/TMP, record the path that was
+    handed to the subprocess, whether the smoke substituted a temp-isolation
+    override (i.e. the resolved path lives under this run's temp dir), and whether
+    that path is writable. This is purely diagnostic — it does not fetch data.
+    """
+    tmp_resolved = str(tmp.resolve())
+    keys = [
+        "XHELIO_CDAWEB_CACHE_DIR",
+        "PDSMCP_CACHE_DIR",
+        "XHELIO_SPICE_KERNEL_DIR",
+        "UV_CACHE_DIR",
+        "XDG_CACHE_HOME",
+        "TMPDIR",
+    ]
+    report: dict[str, Any] = {}
+    for key in keys:
+        raw = env.get(key)
+        if not raw:
+            report[key] = {"resolved": None, "set": False}
+            continue
+        path = Path(raw)
+        try:
+            resolved = str(path.resolve())
+        except OSError:
+            resolved = raw
+        report[key] = {
+            "resolved": resolved,
+            "set": True,
+            "temp_isolated": resolved.startswith(tmp_resolved),
+            # Caller-provided (process env) values are not auto-isolated; the
+            # data-cache vars are isolated to tmp unless the caller set them.
+            "from_caller_env": key in os.environ and os.environ.get(key) == raw,
+            "writable": _is_writable_dir(path),
+        }
+    return report
 
 
 def _load_server_config() -> dict[str, Any]:
@@ -228,8 +365,11 @@ def main() -> int:
 
     server = _load_server_config()
     command, command_args = _server_command(server)
+    dependency_audit = _parse_dependency_audit(server)
     with tempfile.TemporaryDirectory(prefix="spedas-plugin-smoke-") as tmpdir:
-        env = _server_env(server, Path(tmpdir))
+        tmp = Path(tmpdir)
+        env = _server_env(server, tmp)
+        cache_diagnostics = _cache_diagnostics(env, tmp)
         # Turn timeouts / server crashes / closed-stdout into a one-line message
         # and non-zero exit instead of a raw traceback (#26).
         tools = mcp_client.run_client(
@@ -253,6 +393,8 @@ def main() -> int:
         "missing_groups": missing_groups,
         "group_check_enforced": not args.skip_group_check,
         "command": [command, *command_args],
+        "dependency_audit": dependency_audit,
+        "cache_diagnostics": cache_diagnostics,
         "note": "initialize + tools/list only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
     }
     if args.json:
@@ -260,6 +402,17 @@ def main() -> int:
     else:
         print(f"SPEDAS plugin MCP runtime smoke: {'OK' if payload['ok'] else 'FAIL'}")
         print(f"tool_count: {payload['tool_count']}")
+        # Issue #3 audit trail: surface the configured source/pin in human mode too.
+        da = dependency_audit
+        print(f"spedas_mcp source: {da['from_arg']}")
+        print(
+            f"  pinned: {da['is_pinned']} (ref_kind={da['ref_kind']}, "
+            f"resolved_commit={da['resolved_spedas_mcp_commit']})"
+        )
+        print(
+            f"  mcp requirement: {da['mcp_requirement']} "
+            f"(upper_bound={da['mcp_has_upper_bound']})"
+        )
         for name, info in groups.items():
             # With --skip-group-check the group result does not affect the exit
             # code, so reporting "MISSING ..." would contradict a passing run (#33).
