@@ -26,10 +26,10 @@ The two layers (see the README's "Architecture: two independent layers") are
 recorded differently:
 
 - **MCP-only run** (you only called `spedas` MCP tools): record the resolved
-  `spedas_mcp` source and commit/version, the `uv`/`uvx` version, the OS, and the
+  `spedas_agent_kit` source and commit/version, the `uv`/`uvx` version, the OS, and the
   cache/kernel directories in effect. The *Python packages in your local shell are
   irrelevant* — the server runs in its own `uvx`-managed environment. The
-  single most important field is the resolved `spedas_mcp` commit (see
+  single most important field is the resolved `spedas_agent_kit` commit (see
   [`docs/dependencies.md`](../../../docs/dependencies.md) for how to pin/record it).
 - **PySPEDAS run** (you ran local `pyspedas`/`pytplot` recipes): additionally record
   your local `python --version`, `pip freeze` (at least `pyspedas`/`pytplot`/`numpy`

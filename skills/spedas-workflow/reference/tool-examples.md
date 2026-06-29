@@ -1,13 +1,13 @@
-# SPEDAS MCP tool examples (arguments and return shapes)
+# SPEDAS Agent Kit MCP tool examples (arguments and return shapes)
 
-Concrete, copy-ready argument examples for the SPEDAS MCP tools, with notes on
+Concrete, copy-ready argument examples for the SPEDAS Agent Kit MCP tools, with notes on
 what each call returns and which calls touch the network. This covers the
 **unified public facade** — the science workflow tools and the unified data
 layer. For source-specific (CDAWeb/PDS/SPICE) low-level tools, see
 [`backend-compatibility.md`](backend-compatibility.md); for geometry/SPICE
 tools, see [`geometry-spice.md`](geometry-spice.md).
 
-Arguments below match the pinned `spedas_mcp` tool schemas (17 base tools as of this
+Arguments below match the pinned `spedas_agent_kit` tool schemas (17 base tools as of this
 writing; verify with `python3 scripts/smoke_mcp_runtime.py --json`). Optional
 arguments show their schema default. **Only fetch tools download measurement data**. SPICE kernel downloads happen only when geometry calls explicitly set `allow_kernel_download=True`; examples here otherwise stay metadata/planning-safe.
 

@@ -210,8 +210,9 @@ def _extract_git_source_and_extras(from_value: str) -> tuple[str, set[str]]:
     """Return the git URL inside a uv/pip ``--from`` value and requested extras.
 
     ``uvx --from`` accepts both a bare git URL and a PEP 508 direct reference such
-    as ``spedas-mcp[analysis] @ git+https://...@<sha>``. Issue #49 needs the
-    latter so the MCP server subprocess installs the analysis backend. Normalize
+    as ``spedas-agent-kit[analysis] @ git+https://...@<sha>``. The Claude wrapper
+    ships a base Agent Kit pin by default, but the parser keeps extras visible for
+    deployments that intentionally request optional backends. Normalize
     spaces before parsing because JSON args carry the whole direct reference as
     one string.
     """
@@ -231,7 +232,7 @@ def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
     """Split a pip/uv git source into (url_without_ref, ref).
 
     A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
-    forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
+    forms such as ``git+ssh://git@github.com/spedas/spedas_agent_kit.git`` also contain
     ``@`` before the final slash; those must NOT be treated as pinned refs. The
     input may be a bare git URL or a PEP 508 direct reference with extras.
     """
@@ -259,10 +260,10 @@ def _mcp_has_upper_bound(compact: str) -> bool:
 
 
 def _validate_mcp_pin(rel: str, args: list[str]) -> None:
-    """Issue #3: enforce that the spedas_mcp source is pinned and the MCP protocol
+    """Issue #3: enforce that the spedas_agent_kit source is pinned and the MCP protocol
     requirement is upper-bounded.
 
-    - The ``--from git+...spedas_mcp.git`` URL must carry a real final ``@<ref>``
+    - The ``--from git+...spedas_agent_kit.git`` URL must carry a real final ``@<ref>``
       pin (commit or tag) after the repository path. A bare URL resolves the
       default branch HEAD on every run; an SSH userinfo ``git@host`` alone is not a
       ref pin.
@@ -278,23 +279,15 @@ def _validate_mcp_pin(rel: str, args: list[str]) -> None:
         return None
 
     from_value = _value_after("--from") or ""
-    if "spedas_mcp" in from_value:
+    if "spedas_agent_kit" in from_value:
         # Require a ref pin appended after the repo path; do not accept user@host.
         _, ref = _split_git_url_ref(from_value)
         if not ref:
             fail(
-                f"{rel}: spedas_mcp source must be PINNED to a commit or tag "
-                f"(spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@<sha-or-tag>); "
+                f"{rel}: spedas_agent_kit source must be PINNED to a commit or tag "
+                f"(git+https://github.com/spedas/spedas_agent_kit.git@<sha-or-tag>); "
                 f"a floating default-branch HEAD is not reproducible (issue #3)"
             )
-        _, extras = _extract_git_source_and_extras(from_value)
-        if "analysis" not in extras:
-            fail(
-                f"{rel}: spedas_mcp runtime must request the [analysis] extra in "
-                f"the --from spec (spedas-mcp[analysis] @ git+...); otherwise "
-                f"advertised analysis tools fail with dependency_missing (issue #49)"
-            )
-
     # Find the mcp requirement among --with values (e.g. "mcp>=1.26.0,<2").
     mcp_req = None
     for a in args:
@@ -334,16 +327,16 @@ def validate_mcp(mcp_value) -> None:
         fail(f"{rel}: expected MCP command 'uvx' for a portable, no-clone install")
     args = [a for a in (server.get("args") or []) if isinstance(a, str)]
     joined = " ".join(args)
-    # Issue #3: the resolved spedas_mcp source must be the official repo and the
+    # Issue #3: the resolved spedas_agent_kit source must be the official repo and the
     # console entrypoint must be invoked. A wrong repo/entrypoint must fail CI.
-    if "github.com/spedas/spedas_mcp" not in joined:
-        fail(f"{rel}: spedas server must install from git+https://github.com/spedas/spedas_mcp.git")
-    if "spedas-mcp" not in joined:
-        fail(f"{rel}: spedas server must run the 'spedas-mcp' console script")
+    if "github.com/spedas/spedas_agent_kit" not in joined:
+        fail(f"{rel}: spedas server must install from git+https://github.com/spedas/spedas_agent_kit.git")
+    if "spedas-agent-kit" not in joined:
+        fail(f"{rel}: spedas server must run the 'spedas-agent-kit' console script")
     if not any(_is_mcp_requirement(a.replace(" ", "")) for a in args):
         fail(f"{rel}: expected an explicit 'mcp>=...' / 'mcp~=...' / 'mcp==...' requirement for the MCP protocol dependency")
 
-    # Issue #3 reproducibility/auditability: the default spedas_mcp source must be
+    # Issue #3 reproducibility/auditability: the default spedas_agent_kit source must be
     # PINNED (a git @<ref> on the --from URL), and the MCP protocol requirement
     # must be UPPER-BOUNDED so a future breaking major (mcp 2.x) cannot be pulled
     # silently. A regression to a floating HEAD or an open-ended floor fails CI.

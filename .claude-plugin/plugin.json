@@ -1,7 +1,7 @@
 {
   "name": "spedas-claude",
   "version": "0.1.0",
-  "description": "Claude Code runtime module for the SPEDAS Agent Kit, backed by the official SPEDAS MCP heliophysics tools.",
+  "description": "Claude Code runtime module for the SPEDAS Agent Kit, backed by the official SPEDAS Agent Kit MCP heliophysics tools.",
   "author": {
     "name": "SPEDAS",
     "url": "https://github.com/spedas"

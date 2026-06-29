@@ -42,7 +42,7 @@ def negotiated_protocol_version() -> str:
     2. ``mcp.types.LATEST_PROTOCOL_VERSION`` when the optional client package is
        importable in this wrapper interpreter.
     3. A single documented fallback matching the current ``mcp>=1.26.0,<2`` server
-       dependency used by ``spedas_mcp``.
+       dependency used by ``spedas_agent_kit``.
 
     The initialize request must always include ``protocolVersion``: the real
     server rejects an omitted field before any negotiation can happen. This keeps
@@ -64,7 +64,7 @@ def initialize_params(client_name: str, client_version: str = "0.1.0") -> dict[s
     """Build the ``initialize`` params with an explicit protocol version.
 
     A missing ``protocolVersion`` is not a safe negotiation strategy for the
-    stdio JSON-RPC clients used here: ``spedas_mcp`` returns an invalid-params
+    stdio JSON-RPC clients used here: ``spedas_agent_kit`` returns an invalid-params
     initialize error. Use :func:`negotiated_protocol_version` instead of embedding
     protocol-version literals in each script.
     """

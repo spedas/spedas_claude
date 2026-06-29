@@ -1,10 +1,8 @@
-# SPEDAS Agent Kit for Claude Code
+# SPEDAS Claude Code plugin wrapper
 
-The Claude Code runtime module is currently the repository root. It stays there so
-existing Claude Code plugin installs keep working while the public product identity
-moves from "SPEDAS Claude" toward **SPEDAS Agent Kit**.
-
-Claude Code module entry points:
+This repository is the Claude Code wrapper for the official SPEDAS Agent Kit
+core. The runtime resources live at the repository root for compatibility with
+Claude Code plugin discovery:
 
 - plugin manifest: [`../../.claude-plugin/plugin.json`](../../.claude-plugin/plugin.json)
 - MCP server config: [`../../.mcp.json`](../../.mcp.json)
@@ -13,6 +11,5 @@ Claude Code module entry points:
 - default safety hooks: [`../../hooks/hooks.json`](../../hooks/hooks.json)
 - validation: [`../../scripts/validate_plugin.py`](../../scripts/validate_plugin.py)
 
-Future repo-level cleanup can move this runtime under `plugins/claude-code/` after
-installer expectations and existing links are migrated. This PR intentionally avoids
-that breaking move.
+Codex and future runtimes live in their own thin wrapper repositories; this repo
+does not aggregate or own the Agent Kit core.

@@ -7,23 +7,23 @@ exposes (or will expose) it.
 
 ## Read this first: which MCP tools are real today
 
-The SPEDAS MCP surface is split into two maturity tiers. Label every recipe step
+The SPEDAS Agent Kit MCP surface is split into two maturity tiers. Label every recipe step
 by its tier so you never imply an unreleased tool is callable:
 
 - **Current MCP tools** — discovery, planning, and fetch. These ship in the 26-tool
-  `spedas_mcp` surface today: `search_spedas_data_sources`, `plan_spedas_observation`,
+  `spedas_agent_kit` surface today: `search_spedas_data_sources`, `plan_spedas_observation`,
   `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`, `browse_data_sources`,
   `load_data_source`, `browse_data_parameters`, `fetch_data_product`,
   `manage_data_cache`, and the geometry/SPICE family. They produce the **input files**
   every recipe below consumes.
 - **Proposed analysis-layer MCP tools** — the transformation/plotting layer
-  (`spedas_mcp` issues #12–#22). These are **designed but not necessarily released**.
-  Each is tagged below as `[proposed: spedas_mcp #NN]`. Until a tool lands, use the
+  (`spedas_agent_kit` issues #12–#22). These are **designed but not necessarily released**.
+  Each is tagged below as `[proposed: spedas_agent_kit #NN]`. Until a tool lands, use the
   **PySPEDAS fallback** (run the named pyspedas function in your own Python env — see
   `pyspedas-patterns.md`) and say so explicitly. **Do not claim a `[proposed]` tool is
   available**; confirm with `spedas_overview` / the live tool list first.
 
-Tool names follow the `spedas_mcp` issue proposals and may change before release;
+Tool names follow the `spedas_agent_kit` issue proposals and may change before release;
 treat them as the *expected* names, not a guarantee.
 
 ## How to use this file
@@ -34,7 +34,7 @@ treat them as the *expected* names, not a guarantee.
    non-uniform input.
 3. Chain the analysis tool(s); if the tool is `[proposed]` and not yet live, drop to
    the pyspedas fallback in your own environment.
-4. Render with `render_tplot` `[proposed: spedas_mcp #20]` (fallback: pyspedas
+4. Render with `render_tplot` `[proposed: spedas_agent_kit #20]` (fallback: pyspedas
    `tplot()`/`specplot()` with the Agg backend).
 5. Run the **physical sanity checks** before trusting the result.
 6. Save artifacts + provenance (`artifact-provenance.md`); reply with paths, not arrays.
@@ -50,18 +50,18 @@ MCP calls.
 
 | Science question | pyspedas function (module) | MCP tool | Notes |
 |---|---|---|---|
-| Rotate a vector time series between geomagnetic frames (GSE/GSM/SM/GEI/GEO/MAG/J2000) | `cotrans()` (`cotrans_tools/cotrans.py`) | `transform_timeseries_coordinates` `[proposed: spedas_mcp #12]` | Distinct from SPICE `transform_coordinates`, which is a *single static* vector. |
-| Build field-aligned coordinates (∥/⊥ to **B**) | `fac_matrix_make()` (`cotrans_tools/fac_matrix_make.py`) | `generate_fac_matrix` `[proposed: spedas_mcp #13]` | Position-dependent modes (`rgeo`, `mphism`, …) need a position series. |
-| Find a boundary normal / LMN frame (magnetopause, bow shock, current sheet) | `minvar()` / `minvar_matrix_make()` (`cotrans_tools/minvar.py`) | `analyze_minvar_coordinates` `[proposed: spedas_mcp #14]` | Returns eigenvalues + normal; check the intermediate/min eigenvalue ratio. |
+| Rotate a vector time series between geomagnetic frames (GSE/GSM/SM/GEI/GEO/MAG/J2000) | `cotrans()` (`cotrans_tools/cotrans.py`) | `transform_timeseries_coordinates` `[proposed: spedas_agent_kit #12]` | Distinct from SPICE `transform_coordinates`, which is a *single static* vector. |
+| Build field-aligned coordinates (∥/⊥ to **B**) | `fac_matrix_make()` (`cotrans_tools/fac_matrix_make.py`) | `generate_fac_matrix` `[proposed: spedas_agent_kit #13]` | Position-dependent modes (`rgeo`, `mphism`, …) need a position series. |
+| Find a boundary normal / LMN frame (magnetopause, bow shock, current sheet) | `minvar()` / `minvar_matrix_make()` (`cotrans_tools/minvar.py`) | `analyze_minvar_coordinates` `[proposed: spedas_agent_kit #14]` | Returns eigenvalues + normal; check the intermediate/min eigenvalue ratio. |
 | Wave polarization / ellipticity / wave-normal angle | `twavpol()` (`analysis/twavpol.py`) | *(no dedicated proposed tool yet)* — fallback to pyspedas | Pair with FAC rotation first; see particle/wave caveats below. |
-| Dynamic power spectrum (Pi2/Pc pulsations, foreshock turbulence) | `dpwrspc()`/`tdpwrspc` (`tplot_tools/tplot_math/dpwrspc.py`) | `dynamic_power_spectrum` `[proposed: spedas_mcp #15]` | Welch / sliding Hanning window. |
-| Wavelet / time-frequency map (chorus, EMIC packets, onset) | `wavelet()` + `wave_signif()` (`analysis/wavelet.py`) | `wavelet_transform` `[proposed: spedas_mcp #15]` | Set `compute_significance` for Torrence & Compo bands. |
-| Tsyganenko/IGRF field model + field-line tracing | `tt89/tt96/tt01/tts04`, `tigrf`, `ttrace2endpoint()` (`geopack/`) | `evaluate_magnetic_field` `[proposed: spedas_mcp #16]` | T01/TS04 need solar-wind/geomagnetic indices. |
-| McIlwain L-shell + ionospheric footprint | `calculate_lshell()` (`geopack/calculate_lshell.py`) | `calculate_lshell` `[proposed: spedas_mcp #17]` | IGRF default is parameter-free and cheap. |
-| Plasma moments (n, V, T, P tensor, q) from a 3D distribution | `moments_3d()` (`particles/moments/moments_3d.py`) | `compute_particle_moments` `[proposed: spedas_mcp #18]` | Supply spacecraft potential + energy range; see particle workflow below. |
-| Energy / pitch-angle / azimuth spectrograms from a 3D distribution | `spd_pgs_make_e_spec()` / `_phi_` / `_theta_` (`particles/spd_part_products/`) | `compute_particle_spectra` `[proposed: spedas_mcp #19]` | Pitch-angle spectra need a magnetic-field reference (FAC). |
+| Dynamic power spectrum (Pi2/Pc pulsations, foreshock turbulence) | `dpwrspc()`/`tdpwrspc` (`tplot_tools/tplot_math/dpwrspc.py`) | `dynamic_power_spectrum` `[proposed: spedas_agent_kit #15]` | Welch / sliding Hanning window. |
+| Wavelet / time-frequency map (chorus, EMIC packets, onset) | `wavelet()` + `wave_signif()` (`analysis/wavelet.py`) | `wavelet_transform` `[proposed: spedas_agent_kit #15]` | Set `compute_significance` for Torrence & Compo bands. |
+| Tsyganenko/IGRF field model + field-line tracing | `tt89/tt96/tt01/tts04`, `tigrf`, `ttrace2endpoint()` (`geopack/`) | `evaluate_magnetic_field` `[proposed: spedas_agent_kit #16]` | T01/TS04 need solar-wind/geomagnetic indices. |
+| McIlwain L-shell + ionospheric footprint | `calculate_lshell()` (`geopack/calculate_lshell.py`) | `calculate_lshell` `[proposed: spedas_agent_kit #17]` | IGRF default is parameter-free and cheap. |
+| Plasma moments (n, V, T, P tensor, q) from a 3D distribution | `moments_3d()` (`particles/moments/moments_3d.py`) | `compute_particle_moments` `[proposed: spedas_agent_kit #18]` | Supply spacecraft potential + energy range; see particle workflow below. |
+| Energy / pitch-angle / azimuth spectrograms from a 3D distribution | `spd_pgs_make_e_spec()` / `_phi_` / `_theta_` (`particles/spd_part_products/`) | `compute_particle_spectra` `[proposed: spedas_agent_kit #19]` | Pitch-angle spectra need a magnetic-field reference (FAC). |
 | Magnetic topology / null detection (multi-spacecraft) | `find_magnetic_nulls()`, `lingradest()` (`analysis/`) | *(no dedicated proposed tool yet)* — fallback to pyspedas | Requires ≥4 spacecraft, gap-filled, uniform-cadence input. |
-| Render multi-panel time series + spectrograms to PNG | `tplot()` / `specplot()` (`tplot_tools/MPLPlotter/`) | `render_tplot` `[proposed: spedas_mcp #20]` | Returns a PNG path only; Agg backend, `display=False`. |
+| Render multi-panel time series + spectrograms to PNG | `tplot()` / `specplot()` (`tplot_tools/MPLPlotter/`) | `render_tplot` `[proposed: spedas_agent_kit #20]` | Returns a PNG path only; Agg backend, `display=False`. |
 
 > Some recipes have **no dedicated proposed MCP tool yet** (e.g. `twavpol`,
 > `find_magnetic_nulls`). For these, the only route today is the pyspedas fallback in
@@ -101,7 +101,7 @@ right moment/spectrum and to decide when to trust it.
 
 ### Which moment output matters
 
-`compute_particle_moments` `[proposed: spedas_mcp #18]` (fallback: `moments_3d()`)
+`compute_particle_moments` `[proposed: spedas_agent_kit #18]` (fallback: `moments_3d()`)
 returns several quantities — choose by question:
 
 - **Density (n)** — continuity, boundary identification, mass loading. Most robust
@@ -115,7 +115,7 @@ returns several quantities — choose by question:
 
 ### Energy vs. pitch-angle vs. 2D slices
 
-`compute_particle_spectra` `[proposed: spedas_mcp #19]` (fallback:
+`compute_particle_spectra` `[proposed: spedas_agent_kit #19]` (fallback:
 `spd_pgs_make_*_spec()`):
 
 - **Energy spectrum** (energy vs. time) — beams, acceleration, spectral hardening.
@@ -128,7 +128,7 @@ returns several quantities — choose by question:
 
 - **BV / BE / perp planes** — orient slices relative to **B** and bulk-velocity / **E**.
 - **FAC (∥/⊥)** — parallel vs. perpendicular dynamics; build with `generate_fac_matrix`
-  `[proposed: spedas_mcp #13]` first, then rotate the vector/distribution.
+  `[proposed: spedas_agent_kit #13]` first, then rotate the vector/distribution.
 - State which frame a result is in; a "perpendicular" anisotropy is meaningless without
   naming the reference.
 

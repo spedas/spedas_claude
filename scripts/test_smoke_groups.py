@@ -182,22 +182,22 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
-            "spedas-mcp",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+            "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
-    assert audit["is_spedas_mcp_source"], audit
-    assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_mcp.git", audit
-    assert audit["pinned_ref"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
+    assert audit["is_spedas_agent_kit_source"], audit
+    assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_agent_kit.git", audit
+    assert audit["pinned_ref"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["resolved_spedas_mcp_commit"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
+    assert audit["resolved_spedas_agent_kit_commit"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
     assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
     assert audit["mcp_has_upper_bound"] is True, audit
-    assert audit["spedas_mcp_extras"] == ["analysis"], audit
-    assert audit["analysis_extra_enabled"] is True, audit
-    assert audit["entrypoint"] == "spedas-mcp", audit
+    assert audit["spedas_agent_kit_extras"] == [], audit
+    assert audit["analysis_extra_enabled"] is False, audit
+    assert audit["entrypoint"] == "spedas-agent-kit", audit
     print("PASS: dependency audit parses a pinned full SHA + bounded mcp req")
 
 
@@ -206,15 +206,15 @@ def test_dependency_audit_detects_floating_and_unbounded() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git",
-            "spedas-mcp",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git",
+            "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["pinned_ref"] is None, audit
     assert audit["ref_kind"] == "floating", audit
     assert audit["is_pinned"] is False, audit
-    assert audit["resolved_spedas_mcp_commit"] is None, audit
+    assert audit["resolved_spedas_agent_kit_commit"] is None, audit
     assert audit["mcp_has_upper_bound"] is False, audit
     print("PASS: dependency audit flags floating source + unbounded mcp")
 
@@ -225,12 +225,12 @@ def test_dependency_audit_does_not_treat_ssh_userinfo_as_pin() -> None:
     server = {
         "args": [
             "--with", "mcp~=1.26.0",
-            "--from", "git+ssh://git@github.com/spedas/spedas_mcp.git",
-            "spedas-mcp",
+            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git",
+            "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
-    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_mcp.git", audit
+    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_agent_kit.git", audit
     assert audit["pinned_ref"] is None, audit
     assert audit["ref_kind"] == "floating", audit
     assert audit["is_pinned"] is False, audit
@@ -240,24 +240,23 @@ def test_dependency_audit_does_not_treat_ssh_userinfo_as_pin() -> None:
 
 
 def test_dependency_audit_direct_ref_with_ssh_userinfo_and_ref() -> None:
-    # Issue #49 switched the default source to a PEP 508 direct reference with
-    # extras. Preserve the issue #3 userinfo guard even for that newer shape:
+    # Preserve the issue #3 userinfo guard for SSH URLs:
     # git@github.com is not a pin, but a final @<sha> after the repo path is.
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "spedas-mcp[analysis] @ git+ssh://git@github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
-            "spedas-mcp",
+            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+            "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
-    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_mcp.git", audit
-    assert audit["pinned_ref"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
+    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_agent_kit.git", audit
+    assert audit["pinned_ref"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["spedas_mcp_extras"] == ["analysis"], audit
-    assert audit["analysis_extra_enabled"] is True, audit
-    print("PASS: dependency audit handles direct-ref extras with SSH userinfo and final ref")
+    assert audit["spedas_agent_kit_extras"] == [], audit
+    assert audit["analysis_extra_enabled"] is False, audit
+    print("PASS: dependency audit handles SSH userinfo with final ref")
 
 
 def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:
@@ -265,15 +264,15 @@ def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:
     server = {
         "args": [
             "--with", "mcp==1.26.0",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@v0.2.0",
-            "spedas-mcp",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@v0.2.0",
+            "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["pinned_ref"] == "v0.2.0", audit
     assert audit["ref_kind"] == "tag", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["resolved_spedas_mcp_commit"] is None, audit
+    assert audit["resolved_spedas_agent_kit_commit"] is None, audit
     # exact == also counts as upper-bounded for the protocol dep.
     assert audit["mcp_has_upper_bound"] is True, audit
     print("PASS: dependency audit treats a tag ref as pinned (not a commit)")

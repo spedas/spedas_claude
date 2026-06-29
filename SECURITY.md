@@ -1,12 +1,12 @@
 # Security Policy
 
 The **spedas-claude** plugin is a wrapper that, on use, installs and runs the
-official SPEDAS MCP server over the network (`uvx` from
-`git+https://github.com/spedas/spedas_mcp.git`) and writes caches under
+official SPEDAS Agent Kit MCP server over the network (`uvx` from
+`git+https://github.com/spedas/spedas_agent_kit.git`) and writes caches under
 `~/.cache/spedas/*`. Because it executes code fetched at runtime, we take
 disclosure seriously.
 
-`spedas_mcp` is resolved from the upstream **default branch (unpinned)** — there is
+`spedas_agent_kit` is resolved from the upstream **default branch (unpinned)** — there is
 no `@<tag/commit>` ref in `.mcp.json` — so whatever is on that branch executes on
 every CI run and on a user's first run. To pin an exact commit/tag for a
 reproducible or audited deployment, follow the procedure in
@@ -18,7 +18,7 @@ reproducible or audited deployment, follow the procedure in
   in `.mcp.json`, the default fetch/kernel guard under `hooks/`, the validators and
   smoke scripts, cache-path handling, or anything that could cause the plugin to
   fetch/run unintended code.
-- **[spedas/spedas_mcp](https://github.com/spedas/spedas_mcp)** — vulnerabilities
+- **[spedas/spedas_agent_kit](https://github.com/spedas/spedas_agent_kit)** — vulnerabilities
   in the scientific MCP server itself (the tools, data fetching, SPICE kernel
   handling). Please report those to that project.
 
@@ -44,7 +44,7 @@ Please include:
 
 This is an early-stage (`0.x`) project; only the latest release on `main`
 receives security fixes. See [CHANGELOG.md](CHANGELOG.md) for the current
-version and the `spedas_mcp` compatibility note.
+version and the `spedas_agent_kit` compatibility note.
 
 ## Scope notes
 

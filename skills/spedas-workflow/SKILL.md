@@ -1,18 +1,18 @@
 ---
 name: spedas-workflow
-description: Use when working with SPEDAS, PySPEDAS, or the SPEDAS MCP plugin to discover heliophysics data sources, choose missions/parameters/time ranges, plan science workflows, run safe metadata-first checks, fetch/export artifacts only when appropriate, and preserve provenance.
+description: Use when working with SPEDAS, PySPEDAS, or the SPEDAS Agent Kit MCP plugin to discover heliophysics data sources, choose missions/parameters/time ranges, plan science workflows, run safe metadata-first checks, fetch/export artifacts only when appropriate, and preserve provenance.
 ---
 
 # SPEDAS / PySPEDAS workflow skill
 
-Use this skill when the user asks a heliophysics data question, wants to use SPEDAS/PySPEDAS, or wants an agent runtime to call the SPEDAS MCP plugin.
+Use this skill when the user asks a heliophysics data question, wants to use SPEDAS/PySPEDAS, or wants an agent runtime to call the SPEDAS Agent Kit MCP plugin.
 
 ## Operating model
 
 Think in four layers:
 
 1. **Science question** — event, mission, interval, coordinate system, expected signal, and success criteria.
-2. **Workflow layer** — SPEDAS MCP planning/comparison/bundle tools or PySPEDAS recipes.
+2. **Workflow layer** — SPEDAS Agent Kit MCP planning/comparison/bundle tools or PySPEDAS recipes.
 3. **Unified data layer** — source category `cdaweb`, `pds`, or `spice`; do not expose `xhelio-*` as the user-facing mental model. `spice` is a discovery category here (`browse_data_sources` / `load_data_source` / `browse_data_parameters`), but SPICE geometry is **not** fetched via `fetch_data_product` — route ephemerides/frames through the geometry/SPICE tools (see `reference/geometry-spice.md`).
 4. **Artifacts and provenance** — outputs are paths, manifests, hashes, plots, tables, and notes; avoid dumping large arrays/CDF/tplot objects into chat.
 
@@ -29,7 +29,7 @@ Think in four layers:
 5. Save artifacts with provenance: request, tool call/source, versions, cache/output roots, SHA-256 where useful, variable/source mapping, and caveats.
 6. Report results conclusion-first, with paths and exact next actions.
 
-## Preferred SPEDAS MCP tools
+## Preferred SPEDAS Agent Kit MCP tools
 
 - Discovery and mental model: `spedas_overview`.
 - Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
@@ -72,13 +72,13 @@ Before expanding the interval, confirm variable names, data cadence, download/ca
 When something fails, label it precisely:
 
 - **MCP wrapper issue** — plugin config, server startup, schema, runtime smoke, CLI integration.
-- **SPEDAS MCP issue** — unified tool behavior, planning semantics, parameter mapping, error shape.
+- **SPEDAS Agent Kit MCP issue** — unified tool behavior, planning semantics, parameter mapping, error shape.
 - **Backend/data gap** — missing CDAWeb variable, incomplete PDS label/metadata, unavailable SPICE kernel.
 - **External service limit** — network, archive outage, timeout, HTTP 429, cold cache.
 - **Docs/skills gap** — the tool works but first-user instructions or scientific method are unclear.
 
 For per-class error signals, a triage decision tree, diagnostic commands, **which
-repo to file each class in** (`spedas_claude` vs `spedas_mcp` vs backend archives),
+repo to file each class in** (`spedas_claude` vs `spedas_agent_kit` vs backend archives),
 and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 
 ## References in this skill folder
@@ -101,13 +101,13 @@ and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 ## Analysis-layer tool maturity
 
 Beyond the 17 current base MCP tools (discovery, planning, fetch, geometry, optional backend entrypoints), the
-analysis/transformation/plotting layer is **proposed** on `spedas_mcp` (issues
+analysis/transformation/plotting layer is **proposed** on `spedas_agent_kit` (issues
 #12–#22) and may not be released yet. The recipe/workflow references above tag these
-`[proposed: spedas_mcp #NN]`. **Confirm a proposed tool is live** (via
+`[proposed: spedas_agent_kit #NN]`. **Confirm a proposed tool is live** (via
 `spedas_overview` / the active tool list) before presenting it as runnable; otherwise
 use the PySPEDAS fallback (`reference/pyspedas-patterns.md`) and say so. The
 `/analyze` command (`commands/analyze.md`) walks this selection interactively.
 
 Repo-level docs (outside this skill folder): `docs/configuration.md` (env/cache
 variables), `docs/safety.md` (fetch/kernel boundary + opt-in), `docs/dependencies.md`
-(pinning `spedas_mcp`).
+(pinning `spedas_agent_kit`).

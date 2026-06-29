@@ -1,6 +1,6 @@
 # Unified facade and current backend entrypoints
 
-The current pinned `spedas_mcp` base surface is intentionally compact. Use the
+The current pinned `spedas_agent_kit` base surface is intentionally compact. Use the
 `source_type`-parameterized unified facade as the public data-layer mental model:
 
 | Step | Public tool |

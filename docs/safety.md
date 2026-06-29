@@ -1,7 +1,7 @@
 # Fetch & kernel safety boundary
 
-This plugin exposes the SPEDAS MCP primary surface (17 base tools at the pinned
-`spedas_mcp` commit) plus analysis tools enabled by the default `[analysis]` extra.
+This plugin exposes the SPEDAS Agent Kit MCP primary surface (17 base tools at the pinned
+`spedas_agent_kit` commit) with optional analysis tools owned by the Agent Kit core and not requested by default.
 Some tools perform **real network downloads**:
 mission data products and SPICE kernels. This document defines the safety
 boundary, the opt-in language to use, and what to verify before approving real
@@ -9,8 +9,8 @@ fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook for the
 enabled default `hooks/hooks.json` guard.
 
 > **Caveat:** the tools and their fetch/kernel behavior live in the upstream
-> `spedas_mcp` server, which `.mcp.json` now resolves from a **pinned commit**
-> (`5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`). The pin makes the tool surface
+> `spedas_agent_kit` server, which `.mcp.json` now resolves from a **pinned commit**
+> (`52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`). The pin makes the tool surface
 > stable per install; re-verify this boundary whenever you **bump** the pin, since
 > a new commit can alter what counts as a fetch/kernel tool (see
 > [`COMPATIBILITY.md`](../COMPATIBILITY.md) and [`dependencies.md`](dependencies.md)).

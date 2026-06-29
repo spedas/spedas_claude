@@ -1,6 +1,6 @@
 <!--
 Thanks for contributing to spedas-claude (the plugin wrapper).
-See CONTRIBUTING.md for which problems belong here vs. in spedas/spedas_mcp.
+See CONTRIBUTING.md for which problems belong here vs. in spedas/spedas_agent_kit.
 -->
 
 ## Summary

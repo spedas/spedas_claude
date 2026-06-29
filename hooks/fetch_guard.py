@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 FETCH_TOOLS = {
-    # Current data-download tools exposed by the pinned SPEDAS MCP server.
+    # Current data-download tools exposed by the pinned SPEDAS Agent Kit MCP server.
     "mcp__spedas__fetch_data_product",
     "mcp__spedas__fetch_hapi_data",
     "mcp__spedas__fetch_fdsn_data",
