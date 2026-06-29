@@ -1,74 +1,75 @@
 # Geometry and SPICE tools
 
-The SPEDAS MCP exposes six dedicated geometry/SPICE tools. They answer
-*"where was the spacecraft / which way does this vector point"* questions —
-ephemerides, distances, coordinate-frame transforms — separately from the
-measurement-data layer. This document names the real tools, shows safe examples,
-and draws the line between **metadata/planning** (cheap, no download) and
-**kernel/data downloads** (gated, opt-in).
+The current pinned `spedas_mcp` base surface exposes three public geometry/SPICE
+tools:
 
-Tool names and arguments match the live `spedas_mcp` schemas (verify with
-`python3 scripts/smoke_mcp_runtime.py --json`).
+- `get_ephemeris`
+- `compute_distance`
+- `transform_coordinates`
 
-## The six geometry/SPICE tools
+They answer *"where was the spacecraft / which way does this vector point"*
+questions separately from the measurement-data layer. SPICE discovery/cache
+context is routed through the unified data facade, not through legacy hidden
+list/manage tools. Verify the installed surface with
+`python3 scripts/smoke_mcp_runtime.py --json` (this wrapper pins
+`spedas_mcp` `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`).
 
-| Tool | Required args | Touches network? | Purpose |
-|---|---|---|---|
-| `list_spice_missions` | — | metadata | List supported spacecraft/bodies with NAIF IDs and kernel status. |
-| `list_coordinate_frames` | — | metadata | List supported coordinate frames and usage notes. |
-| `get_ephemeris` | `target`, `time` | may load kernels | Single-time state inline, or a timeseries trajectory written to CSV. |
-| `compute_distance` | `target1`, `target2`, `time_start`, `time_end` | may load kernels | Distance between two targets over a time range. |
-| `transform_coordinates` | `vector`, `time`, `from_frame`, `to_frame` | may load kernels | Transform a 3D vector between SPICE frames. |
-| `manage_spice_kernels` | `action` | yes for load/clean/purge | Inspect status, check remote availability, load, clean, or purge kernels; the explicit kernel maintenance surface. |
+## Public routing
 
-**Routing rule:** SPICE *geometry* goes through these tools, **not** through
-`fetch_data_product`. `fetch_data_product` is for CDAWeb/PDS measurement
-products; it deliberately routes SPICE requests here.
+| Need | Public tool(s) | Notes |
+|---|---|---|
+| Overview / supported source families | `spedas_overview()` and `browse_data_sources(source_type="spice")` | Metadata/planning only. |
+| SPICE source context / cache state | `load_data_source(source_type="spice", source_id=...)`, `browse_data_parameters(source_type="spice", ...)`, `manage_data_cache(source_type="spice", action="status")` | Use the unified facade for discovery/status. |
+| Ephemeris / state vector | `get_ephemeris(target, time, ...)` | Single-time state inline; timeseries writes a CSV artifact when `output_file` is set. |
+| Distance over time | `compute_distance(target1, target2, time_start, time_end, ...)` | Keep ranges narrow and steps coarse until you know the need. |
+| Frame transform | `transform_coordinates(vector, time, from_frame, to_frame, spacecraft?)` | Returns a compact transformed vector. |
 
-## Metadata/planning first (no downloads)
+**Routing rule:** SPICE *geometry* goes through the geometry tools above, **not**
+through `fetch_data_product`. Measurement-data fetches remain CDAWeb/PDS/HAPI/FDSN
+workflows.
 
-Start every geometry task with the two list tools. They never download kernels
-and are safe in any sandbox:
+## Kernel/download boundary
+
+Geometry calls may require SPICE kernels. The current server is guarded: if needed
+kernels are absent and `allow_kernel_download` is false, the call returns a
+`kernel_download_required` / confirmation-style response instead of silently
+downloading 100 MB--1+ GB files. Only pass `allow_kernel_download=True` after
+confirming cache directory, mission/time scope, and user opt-in.
+
+For read-only cache status use:
 
 ```jsonc
-list_spice_missions()        // -> supported targets, NAIF IDs, which kernels are present
-list_coordinate_frames()     // -> frame names (e.g. ECLIPJ2000, J2000, IAU_*, mission frames) + notes
+manage_data_cache(source_type="spice", action="status")
 ```
 
-Use the results to confirm that your target and frames are supported, and to see
-whether the needed kernels are already cached, **before** requesting any geometry
-that may trigger a kernel load.
+For cleanup, keep scope explicit:
+
+```jsonc
+manage_data_cache(source_type="spice", action="clean", mission="PSP")
+```
 
 ## Ephemeris: single time vs. timeseries
 
-`get_ephemeris` has two modes. A single-time query returns the state inline (a
-small object — safe to read in chat). A timeseries query (`time_end` + `step`
-set) writes a CSV artifact instead of inlining a large array.
-
 ```jsonc
-// Single-time state, inline (safe, small):
+// Single-time state, inline (safe/compact if kernels are already cached):
 get_ephemeris(
   target="PSP",
   time="2021-11-21T08:00:00Z",
-  frame="ECLIPJ2000",     // default "ECLIPJ2000"
-  observer="SUN"          // default "SUN"
+  frame="ECLIPJ2000",
+  observer="SUN"
 )
 
-// Timeseries trajectory -> CSV artifact (note output_file + time_end + step):
+// Timeseries trajectory -> CSV artifact:
 get_ephemeris(
   target="PSP",
   time="2021-11-21T00:00:00Z",
-  time_end="2021-11-22T00:00:00Z",   // presence of time_end makes it a timeseries
-  step="1h",                          // default "1h"
+  time_end="2021-11-22T00:00:00Z",
+  step="1h",
   frame="ECLIPJ2000",
   observer="SUN",
   output_file="/tmp/spedas-geom/psp_traj.csv"
 )
 ```
-
-Returns: the inline state (single-time) or the CSV path plus row/step summary
-(timeseries) — never a dumped array. Choose a coarse `step` and a narrow span for
-a first look.
 
 ## Distance between two targets
 
@@ -78,13 +79,12 @@ compute_distance(
   target2="SUN",
   time_start="2021-11-21T00:00:00Z",
   time_end="2021-11-22T00:00:00Z",
-  step="1h"               // default "1h"
+  step="1h"
 )
 ```
 
-Returns: a compact distance summary (e.g. min/max/at-times) over the range. Keep
-the range short and the step coarse to avoid large outputs and unnecessary kernel
-coverage.
+Returns a compact distance summary over the range. Keep the range short and the
+step coarse until the science need is clear.
 
 ## Coordinate transforms
 
@@ -94,48 +94,27 @@ transform_coordinates(
   time="2015-10-16T13:06:00Z",
   from_frame="GSE",
   to_frame="GSM",
-  spacecraft="MMS1"        // optional, default null; needed for spacecraft-relative frames
+  spacecraft="MMS1"
 )
 ```
 
-Returns: the transformed 3D vector (small, inline). Use `list_coordinate_frames`
-first to confirm both `from_frame` and `to_frame` are supported.
+Returns the transformed 3D vector. If a frame/body is unsupported or kernels are
+missing, treat the structured error as the next planning step rather than
+retrying blindly.
 
-## Kernels: gated load and maintenance
-
-`manage_spice_kernels` is where kernel inspection, remote checks, load, clean, and purge actions are explicit.
-Start with read-only `status` or `check_remote`; only request `load`, `clean`, or `purge` with a
-clear scope and after confirming cache location.
+## Safe geometry walkthrough
 
 ```jsonc
-manage_spice_kernels(action="status")                         // read-only local inventory
-manage_spice_kernels(action="check_remote", mission="PSP")     // read-only remote availability check
-// Kernel loads are explicit and scoped — confirm before running:
-manage_spice_kernels(action="load", mission="PSP",
-                     filenames=["spk_psp_xxx.bsp"])            // example; gate on user intent
-```
-
-Returns: kernel inventory/status, or the result of the requested action.
-**Avoid large kernel loads/downloads without confirming cache directory and scope.**
-The runtime smoke and validators never trigger downloads.
-
-For *data-layer* cache status of the SPICE source (sizes/locations), you can also
-use the unified `manage_data_cache(source_type="spice", action="status")`; use
-`manage_spice_kernels` for kernel-specific inspection/maintenance.
-
-## Safe geometry walkthrough (no downloads)
-
-```jsonc
-list_spice_missions()
-list_coordinate_frames()
-get_ephemeris(target="PSP", time="2021-11-21T08:00:00Z")     // single-time, inline
+spedas_overview()
+browse_data_sources(source_type="spice")
+manage_data_cache(source_type="spice", action="status")
+get_ephemeris(target="PSP", time="2021-11-21T08:00:00Z")
 compute_distance(target1="PSP", target2="SUN",
                  time_start="2021-11-21T00:00:00Z",
                  time_end="2021-11-21T06:00:00Z", step="1h")
 transform_coordinates(vector=[1,0,0], time="2021-11-21T08:00:00Z",
                       from_frame="ECLIPJ2000", to_frame="J2000")
-manage_spice_kernels(action="status")
 ```
 
-The walkthrough above avoids `manage_spice_kernels(action="load")`, `clean`, and `purge`. Kernel loads or maintenance happen only through an explicit
-`manage_spice_kernels(action="load"|"clean"|"purge", …)` you choose to run.
+This walkthrough stays metadata/cache-aware and does not opt into kernel
+downloads. If a call asks for `allow_kernel_download=True`, stop and confirm first.

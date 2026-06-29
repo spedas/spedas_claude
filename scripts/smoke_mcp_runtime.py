@@ -33,7 +33,7 @@ import mcp_client_common as mcp_client  # noqa: E402
 # or the unified facade while still exposing "enough" tools to pass a count
 # check. See tool-examples.md, geometry-spice.md, backend-compatibility.md.
 TOOL_GROUPS: dict[str, list[str]] = {
-    # Science workflow / planning layer (no backend equivalents).
+    # Science workflow / planning layer.
     "workflow": [
         "spedas_overview",
         "search_spedas_data_sources",
@@ -49,45 +49,47 @@ TOOL_GROUPS: dict[str, list[str]] = {
         "fetch_data_product",
         "manage_data_cache",
     ],
-    # Dedicated geometry/SPICE tools (#7/#8): metadata + gated kernel surface.
+    # Current SPICE/geometry core tools. Catalog/cache inspection is routed
+    # through the unified facade (browse/load_data_source, manage_data_cache).
     "geometry_spice": [
-        "list_spice_missions",
         "get_ephemeris",
         "compute_distance",
         "transform_coordinates",
-        "list_coordinate_frames",
-        "manage_spice_kernels",
     ],
-    # Backend compatibility/maintenance tools (#18): CDAWeb + PDS.
-    "backend_cdaweb": [
-        "browse_observatories",
-        "load_observatory",
-        "browse_parameters",
-        "fetch_data",
-        "manage_cdaweb_cache",
+    # Registered optional backend entrypoints. They remain visible in the base
+    # server but may report unavailable until the corresponding extra is installed.
+    "optional_hapi": [
+        "browse_hapi_catalog",
+        "fetch_hapi_data",
     ],
-    "backend_pds": [
-        "browse_pds_missions",
-        "load_pds_mission",
-        "browse_pds_parameters",
-        "fetch_pds_data",
-        "manage_pds_cache",
+    "optional_fdsn": [
+        "browse_fdsn_datasets",
+        "fetch_fdsn_data",
     ],
 }
 
-# Core tools that must always be present (the unified facade + workflow layer).
-# Kept as a named constant for backward-compatible JSON output.
+# Baseline tools that must be present for the current pinned spedas_mcp
+# server. This is the 17-tool base surface from commit 5ac9e20; optional
+# HAPI/FDSN entrypoints are registered but may report unavailable at call time
+# unless users install the corresponding extras.
 EXPECTED_CORE_TOOLS = [
     "spedas_overview",
+    "search_spedas_data_sources",
+    "plan_spedas_observation",
+    "compare_cdaweb_pds_spice",
+    "create_spedas_analysis_bundle",
     "browse_data_sources",
     "load_data_source",
     "browse_data_parameters",
     "fetch_data_product",
     "manage_data_cache",
-    "search_spedas_data_sources",
-    "plan_spedas_observation",
-    "compare_cdaweb_pds_spice",
-    "create_spedas_analysis_bundle",
+    "get_ephemeris",
+    "compute_distance",
+    "transform_coordinates",
+    "browse_hapi_catalog",
+    "fetch_hapi_data",
+    "browse_fdsn_datasets",
+    "fetch_fdsn_data",
 ]
 
 

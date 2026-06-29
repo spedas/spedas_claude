@@ -23,7 +23,7 @@ python3 scripts/smoke_mcp_runtime.py --json --timeout 240
 
 Expected: validation exits 0, the negative-case validator tests pass, the offline
 tool-group self-tests pass, and the runtime smoke returns JSON with `ok: true`,
-`tool_count: 40` (against the pinned `spedas_mcp` commit), no missing core tools,
+`tool_count: 17` (against the pinned `spedas_mcp` commit), no missing core tools,
 and `missing_groups: []`. The runtime
 smoke starts the same `uvx ... spedas-mcp` command declared in `.mcp.json` and
 performs MCP initialize + tools/list — verifying the workflow, unified-data,

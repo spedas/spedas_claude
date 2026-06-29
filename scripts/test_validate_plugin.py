@@ -96,7 +96,7 @@ def main() -> int:
         data = json.loads(mcp.read_text())
         data["mcpServers"]["spedas"]["args"] = [
             "--with", "mcp>=1.26.0",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
             "spedas-mcp",
         ]
         mcp.write_text(json.dumps(data))

@@ -137,17 +137,17 @@ the MCP requirement and whether it is upper-bounded — an audit trail you can
 record in release/methods notes — plus a `cache_diagnostics` object reporting the
 resolved cache paths and their writability for the smoke subprocess.
 
-Expected success (`ok: true`, `tool_count: 40` against the pinned commit, empty
+Expected success (`ok: true`, `tool_count: 17` against the pinned commit, empty
 `missing_core_tools`, empty `missing_groups`):
 
 ```json
 {
   "ok": true,
-  "tool_count": 40,
+  "tool_count": 17,
   "missing_core_tools": [],
   "missing_groups": [],
   "dependency_audit": {
-    "resolved_spedas_mcp_commit": "4afdae39bda2ee11e27606809491b4d642e8ecc9",
+    "resolved_spedas_mcp_commit": "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
@@ -234,12 +234,12 @@ the plugin root is a hard error.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+         "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
          "spedas-mcp"]
 ```
 
 - **Source:** the official `git+https://github.com/spedas/spedas_mcp.git`,
-  **pinned** to commit `4afdae39bda2ee11e27606809491b4d642e8ecc9` (a full SHA, so
+  **pinned** to commit `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (a full SHA, so
   it is content-addressed and reproducible). `uvx` resolves and caches it on first
   run.
 - **MCP protocol dependency:** `mcp>=1.26.0,<2` (floor matches `spedas_mcp`'s own

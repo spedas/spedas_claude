@@ -24,7 +24,7 @@ from `.mcp.json`.
 | spedas-claude | spedas_mcp source | MCP protocol range |
 |---|---|---|
 | 0.1.0 | `git+https://github.com/spedas/spedas_mcp.git` (unpinned HEAD) | `mcp>=1.26.0` |
-| Unreleased | `git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9` (pinned commit) | `mcp>=1.26.0,<2` |
+| Unreleased | `git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (pinned commit) | `mcp>=1.26.0,<2` |
 
 > The `[Unreleased]` features below are already committed to `main` but **no version
 > boundary has been cut**: `.claude-plugin/plugin.json` still reads `0.1.0` and no git
@@ -35,9 +35,9 @@ from `.mcp.json`.
 > (bumping `plugin.json` and tagging) is a maintainer action.
 
 > **Stability note:** `spedas_mcp` is now resolved from a **pinned commit**
-> (`4afdae39…`), so the tool surface is stable per install and CI can later cache
+> (`5ac9e20…`), so the tool surface is stable per install and CI can later cache
 > the dependency stack keyed on the resolved set. The pinned commit exposes
-> **40 tools** (verified by `scripts/smoke_mcp_runtime.py`). Treat the tool names
+> **17 base tools** (verified by `scripts/smoke_mcp_runtime.py`). Treat the tool names
 > and signatures as fixed at this pin; they only change when the pin is bumped.
 
 ## [Unreleased]
@@ -49,7 +49,7 @@ from `.mcp.json`.
 
 ### Added
 - Reproducible dependency pinning (Batch S, #3): `.mcp.json` now pins `spedas_mcp`
-  to commit `4afdae39bda2ee11e27606809491b4d642e8ecc9` and bounds the MCP range to
+  to commit `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` and bounds the MCP range to
   `mcp>=1.26.0,<2`. New root [`COMPATIBILITY.md`](COMPATIBILITY.md) records the
   pinned triple, verification command, bump procedure, and supply-chain trust
   model; `docs/dependencies.md`, `docs/safety.md`, and the README were updated to

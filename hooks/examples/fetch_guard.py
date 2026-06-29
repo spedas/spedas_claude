@@ -4,28 +4,24 @@
 DISABLED BY DEFAULT. This script only runs if a user copies the hook config from
 ``hooks/examples/pretooluse-fetch-guard.md`` into ``hooks/hooks.json``. The shipped
 ``hooks/hooks.json`` is an intentional empty placeholder.
-
-Behavior (deliberately minimal and non-destructive):
-
-- Reads the Claude Code PreToolUse hook JSON from stdin.
-- Emits ONE advisory reminder line to stderr for the matched fetch/kernel tool.
-- Exits 0 (non-blocking). It does NO network access and writes NO files.
-
-It never mutates user state. To turn this into a blocking gate, change the exit
-behavior per the Claude Code hook documentation — but advisory is the safer default.
 """
 from __future__ import annotations
 
 import json
 import sys
 
-# Tools that perform real network downloads (the "opt-in" column in docs/safety.md).
+# Tools that perform real data downloads (the "opt-in" column in docs/safety.md).
 FETCH_TOOLS = {
     "mcp__spedas__fetch_data_product",
-    "mcp__spedas__fetch_data",
-    "mcp__spedas__fetch_pds_data",
+    "mcp__spedas__fetch_hapi_data",
+    "mcp__spedas__fetch_fdsn_data",
 }
-KERNEL_TOOL = "mcp__spedas__manage_spice_kernels"
+# Geometry tools can download SPICE kernels only when allow_kernel_download=True.
+GEOMETRY_TOOLS = {
+    "mcp__spedas__get_ephemeris",
+    "mcp__spedas__compute_distance",
+    "mcp__spedas__transform_coordinates",
+}
 
 
 def _read_event() -> dict:
@@ -48,22 +44,14 @@ def main() -> int:
             "Confirm dataset/time-range/cache scope and record opt-in in provenance "
             "before proceeding (see docs/safety.md).\n"
         )
-    elif tool == KERNEL_TOOL:
-        action = tool_input.get("action", "?")
-        if action == "status":
-            # Status is safe/metadata-only; just a light note.
-            sys.stderr.write(
-                "[spedas-fetch-guard] manage_spice_kernels(action=status) is metadata-only "
-                "(no download).\n"
-            )
-        else:
-            sys.stderr.write(
-                f"[spedas-fetch-guard] manage_spice_kernels(action={action}) may download "
-                "SPICE kernels (often 100 MB-1+ GB). Confirm cache dir and scope before "
-                "proceeding (see docs/safety.md).\n"
-            )
+    elif tool in GEOMETRY_TOOLS and tool_input.get("allow_kernel_download") is True:
+        target = tool_input.get("target") or tool_input.get("target1") or tool_input.get("spacecraft") or "?"
+        sys.stderr.write(
+            f"[spedas-fetch-guard] {tool} has allow_kernel_download=True (target: {target}). "
+            "This may download SPICE kernels, often 100 MB-1+ GB. Confirm cache dir "
+            "and scope before proceeding (see docs/safety.md).\n"
+        )
 
-    # Non-blocking: allow the tool call to proceed.
     return 0
 
 

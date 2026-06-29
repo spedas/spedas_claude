@@ -20,7 +20,7 @@ commit and a **bounded** MCP protocol range:
     "spedas": {
       "command": "uvx",
       "args": ["--with", "mcp>=1.26.0,<2",
-               "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+               "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
                "spedas-mcp"]
     }
   }
@@ -30,7 +30,7 @@ commit and a **bounded** MCP protocol range:
 | Field | Value | Notes |
 |---|---|---|
 | Source repo | `https://github.com/spedas/spedas_mcp.git` | official SPEDAS org repo |
-| Ref | `4afdae39bda2ee11e27606809491b4d642e8ecc9` (full SHA) | content-addressed commit pin — reproducible, auditable |
+| Ref | `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (full SHA) | content-addressed commit pin — reproducible, auditable |
 | Package name | `spedas-mcp` (`0.1.0` at time of writing) | from `spedas_mcp/pyproject.toml` |
 | Console script | `spedas-mcp` | `[project.scripts] spedas-mcp = "spedas_mcp:main"` |
 | Python | `>=3.10` | `requires-python` in `spedas_mcp/pyproject.toml` |
@@ -64,11 +64,11 @@ and verifies the pinned server exposes the expected tool surface.
 The pinned commit was verified against the official upstream at pin time:
 
 - Repo: `github.com/spedas/spedas_mcp`
-- Pinned commit: `4afdae39bda2ee11e27606809491b4d642e8ecc9`
+- Pinned commit: `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`
 - Verified with: `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD`
   (the upstream default-branch HEAD resolved to this SHA at pin time)
 - Package version at this commit: `spedas-mcp 0.1.0`
-- Runtime smoke against this pin: `ok: true`, `tool_count: 40`, empty
+- Runtime smoke against this pin: `ok: true`, `tool_count: 17`, empty
   `missing_core_tools`/`missing_groups`
 
 To re-verify the pin still exists upstream, query the commit object (or open the
@@ -76,7 +76,7 @@ GitHub tree URL). Do not rely on `git ls-remote <url> <sha>` for bare commit
 existence, because only advertised refs are guaranteed to appear there:
 
 ```bash
-gh api repos/spedas/spedas_mcp/commits/4afdae39bda2ee11e27606809491b4d642e8ecc9 >/dev/null
+gh api repos/spedas/spedas_mcp/commits/5ac9e2087ca7522bff45386c3a8d308e3d9d92b3 >/dev/null
 ```
 
 ## How to bump the pin for a new deployment

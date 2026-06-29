@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""Network-free tests for the runtime smoke's tool-group check (issue #8).
+"""Network-free tests for the runtime smoke's tool-group check (issues #8/#115).
 
 These do NOT start the MCP server. They import the pure ``_check_groups`` helper
-from ``smoke_mcp_runtime`` and assert that the geometry/SPICE and
-unified-vs-backend tool groups are evaluated correctly, so CI catches a backend
-that drops a whole group (e.g. all SPICE tools) even if the total tool count
-still looks plausible. Run with plain ``python scripts/test_smoke_groups.py`` —
+from ``smoke_mcp_runtime`` and assert that the current 17-tool
+base surface is grouped correctly, so CI catches a dropped family (for example
+all SPICE/geometry tools) even if the total tool count still looks plausible. Run with plain ``python scripts/test_smoke_groups.py`` —
 no pytest, no network.
 """
 from __future__ import annotations
@@ -46,14 +45,14 @@ def test_missing_geometry_group_detected() -> None:
     print("PASS: dropped geometry_spice group is detected")
 
 
-def test_partial_backend_group_detected() -> None:
-    # Remove a single backend tool -> that group must report it missing.
-    dropped = smoke.TOOL_GROUPS["backend_cdaweb"][0]
+def test_partial_optional_group_detected() -> None:
+    # Remove a single optional-backend entrypoint -> that group must report it missing.
+    dropped = smoke.TOOL_GROUPS["optional_hapi"][0]
     tools = [t for t in _all_tools() if t != dropped]
     report = smoke._check_groups(tools)
-    assert not report["backend_cdaweb"]["ok"], "a missing backend tool must flag its group"
-    assert report["backend_cdaweb"]["missing"] == [dropped]
-    print(f"PASS: partially-missing backend_cdaweb detected (dropped {dropped!r})")
+    assert not report["optional_hapi"]["ok"], "a missing optional backend tool must flag its group"
+    assert report["optional_hapi"]["missing"] == [dropped]
+    print(f"PASS: partially-missing optional_hapi detected (dropped {dropped!r})")
 
 
 def test_core_tools_are_subset_of_groups() -> None:
@@ -183,17 +182,17 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
             "spedas-mcp",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["is_spedas_mcp_source"], audit
     assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_mcp.git", audit
-    assert audit["pinned_ref"] == "4afdae39bda2ee11e27606809491b4d642e8ecc9", audit
+    assert audit["pinned_ref"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["resolved_spedas_mcp_commit"] == "4afdae39bda2ee11e27606809491b4d642e8ecc9", audit
+    assert audit["resolved_spedas_mcp_commit"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
     assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
     assert audit["mcp_has_upper_bound"] is True, audit
     assert audit["entrypoint"] == "spedas-mcp", audit
@@ -260,7 +259,7 @@ def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:
 def main() -> int:
     test_all_groups_present()
     test_missing_geometry_group_detected()
-    test_partial_backend_group_detected()
+    test_partial_optional_group_detected()
     test_core_tools_are_subset_of_groups()
     test_initialize_params_no_hardcoded_protocol()
     test_protocol_version_env_override()

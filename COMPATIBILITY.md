@@ -12,7 +12,7 @@ SPEDAS MCP workflow must be reproducible years later.
 | Component | Pinned value | Source of truth |
 |---|---|---|
 | `spedas-claude` (this wrapper) | `0.1.0` on `main` (no release tag cut yet — see [CHANGELOG](CHANGELOG.md)) | `.claude-plugin/plugin.json` `version` |
-| `spedas_mcp` commit | `4afdae39bda2ee11e27606809491b4d642e8ecc9` | `.mcp.json` `--from git+...@<sha>` |
+| `spedas_mcp` commit | `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` | `.mcp.json` `--from git+...@<sha>` |
 | MCP protocol range | `mcp>=1.26.0,<2` | `.mcp.json` `--with` |
 
 The `spedas_mcp` source is pinned to a **full 40-char commit SHA**, so it is
@@ -25,7 +25,7 @@ into an install.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_mcp.git@4afdae39bda2ee11e27606809491b4d642e8ecc9",
+         "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
          "spedas-mcp"]
 ```
 
@@ -42,7 +42,7 @@ python scripts/smoke_mcp_runtime.py --json --timeout 300
 In the JSON output, confirm:
 
 - `dependency_audit.resolved_spedas_mcp_commit` ==
-  `4afdae39bda2ee11e27606809491b4d642e8ecc9`
+  `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`
 - `dependency_audit.ref_kind` == `"commit"` and `dependency_audit.is_pinned` == `true`
 - `dependency_audit.mcp_has_upper_bound` == `true`
 - `ok` == `true` with empty `missing_core_tools` and empty `missing_groups`
@@ -59,7 +59,7 @@ python scripts/validate_plugin.py
 To confirm the pinned commit still exists upstream and matches what you expect:
 
 ```bash
-gh api repos/spedas/spedas_mcp/commits/4afdae39bda2ee11e27606809491b4d642e8ecc9 >/dev/null
+gh api repos/spedas/spedas_mcp/commits/5ac9e2087ca7522bff45386c3a8d308e3d9d92b3 >/dev/null
 # or, to see the current default-branch HEAD you might bump to:
 git ls-remote https://github.com/spedas/spedas_mcp.git HEAD
 ```
