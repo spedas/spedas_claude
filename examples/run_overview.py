@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runnable example: call a key SPEDAS MCP workflow tool end to end.
+"""Runnable example: call a key SPEDAS Agent Kit MCP workflow tool end to end.
 
 This is the smallest *useful* thing you can run against the packaged plugin
 without Claude Code in the loop: it launches the configured ``spedas`` MCP
@@ -28,7 +28,7 @@ Usage::
     python examples/run_overview.py --json           # raw tool result as JSON
     python examples/run_overview.py --timeout 300     # allow a slow first uvx build
 
-The first run resolves and builds the SPEDAS MCP server from git HEAD via
+The first run resolves and builds the SPEDAS Agent Kit MCP server from git HEAD via
 ``uvx`` (2-5 minutes); subsequent runs are fast. This mirrors how Claude Code
 starts the same server from ``.mcp.json``.
 """

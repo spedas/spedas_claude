@@ -40,7 +40,7 @@ cd runs/2015-10-16-mms-magnetopause
 ## The one field that matters most
 
 `environment.txt` is useless for reproducibility unless it records the resolved
-**`spedas_mcp` commit**. `capture_environment.sh` resolves the upstream HEAD for
+**`spedas_agent_kit` commit**. `capture_environment.sh` resolves the upstream HEAD for
 you. What else to record depends on the layer you used — see
 [`../../skills/spedas-workflow/reference/artifact-provenance.md`](../../skills/spedas-workflow/reference/artifact-provenance.md)
 (MCP-only vs. PySPEDAS runs).

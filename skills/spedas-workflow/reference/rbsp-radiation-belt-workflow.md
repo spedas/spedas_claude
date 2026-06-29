@@ -5,7 +5,7 @@ Probes (RBSP), following **plan → fetch → analyze → plot**. Orchestration 
 
 > **Tool maturity:** discovery/planning/fetch tools are **current**; the analysis-layer
 > tools (`calculate_lshell`, `evaluate_magnetic_field`, `compute_particle_spectra`,
-> `render_tplot`) are **proposed** (`spedas_mcp #12–#22`) and may not be released — each
+> `render_tplot`) are **proposed** (`spedas_agent_kit #12–#22`) and may not be released — each
 > is tagged `[proposed]`. Confirm with `spedas_overview`; otherwise use the pyspedas
 > fallback (`pyspedas-patterns.md`). See [`analysis-recipes.md`](analysis-recipes.md) and
 > [`mission-loaders.md`](mission-loaders.md).
@@ -31,14 +31,14 @@ suffixes) — **confirm with `browse_data_parameters` before fetching**.
 
 ## 3. Analyze (the chain)
 
-1. **L-shell** — `calculate_lshell` `[proposed: spedas_mcp #17]` (fallback:
+1. **L-shell** — `calculate_lshell` `[proposed: spedas_agent_kit #17]` (fallback:
    `calculate_lshell()` in `pyspedas/geopack/`) from the position series. Default IGRF is
    parameter-free; distorted models (`t89`/`t96`/`t01`/`ts04`) need geomagnetic
    parameters. This produces the radiation-belt coordinate everything is organized by.
 2. **(Optional) field model / footprint** — `evaluate_magnetic_field`
-   `[proposed: spedas_mcp #16]` (fallback: geopack `tt*`/`tigrf` + `ttrace2endpoint()`)
+   `[proposed: spedas_agent_kit #16]` (fallback: geopack `tt*`/`tigrf` + `ttrace2endpoint()`)
    for field strength along the orbit or ionospheric footpoints.
-3. **Energy spectra** — `compute_particle_spectra` `[proposed: spedas_mcp #19]`
+3. **Energy spectra** — `compute_particle_spectra` `[proposed: spedas_agent_kit #19]`
    (fallback: `spd_pgs_make_e_spec()`) for flux vs. energy vs. time; or use the ECT L3
    flux products directly.
 4. **Organize flux by L** — bin/plot flux vs. L-shell and time to expose the
@@ -46,7 +46,7 @@ suffixes) — **confirm with `browse_data_parameters` before fetching**.
 
 ## 4. Plot
 
-- `render_tplot` `[proposed: spedas_mcp #20]` (fallback: `tplot()`/`specplot()`, Agg,
+- `render_tplot` `[proposed: spedas_agent_kit #20]` (fallback: `tplot()`/`specplot()`, Agg,
   `display=False`): stack L-shell vs. time, the electron-flux energy spectrogram, and a
   flux-vs-L view; storm indices (`SYM_H`) as a context panel.
 - Save the PNG path.

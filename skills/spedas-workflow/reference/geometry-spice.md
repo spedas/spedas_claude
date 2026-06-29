@@ -1,6 +1,6 @@
 # Geometry and SPICE tools
 
-The current pinned `spedas_mcp` base surface exposes three public geometry/SPICE
+The current pinned `spedas_agent_kit` base surface exposes three public geometry/SPICE
 tools:
 
 - `get_ephemeris`
@@ -12,7 +12,7 @@ questions separately from the measurement-data layer. SPICE discovery/cache
 context is routed through the unified data facade, not through legacy hidden
 list/manage tools. Verify the installed surface with
 `python3 scripts/smoke_mcp_runtime.py --json` (this wrapper pins
-`spedas_mcp` `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`).
+`spedas_agent_kit` `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`).
 
 ## Public routing
 

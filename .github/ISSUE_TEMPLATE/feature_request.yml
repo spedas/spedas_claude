@@ -7,7 +7,7 @@ body:
       value: |
         **Scope:** this tracker covers the plugin wrapper. Requests for new
         *science* tools or data sources belong in
-        [spedas/spedas_mcp](https://github.com/spedas/spedas_mcp/issues).
+        [spedas/spedas_agent_kit](https://github.com/spedas/spedas_agent_kit/issues).
   - type: textarea
     id: problem
     attributes:

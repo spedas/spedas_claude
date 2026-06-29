@@ -1,7 +1,7 @@
 # Contributing to spedas-claude
 
 Thanks for helping improve the SPEDAS Claude Code plugin. This repo is a **thin
-wrapper** around the official [SPEDAS MCP server](https://github.com/spedas/spedas_mcp):
+wrapper** around the official [SPEDAS Agent Kit MCP server](https://github.com/spedas/spedas_agent_kit):
 it packages the MCP connection, a workflow skill, and slash commands. It does
 **not** contain the scientific tooling itself.
 
@@ -12,7 +12,7 @@ Knowing which layer a problem lives in saves everyone triage time. There are two
 | Symptom | Layer | Where it belongs |
 |---|---|---|
 | Plugin won't load, a command/skill/doc is wrong, MCP wiring (`.mcp.json`) is broken, CI/packaging issue | **plugin wrapper** (this repo) | [Open an issue here](https://github.com/spedas/spedas_claude/issues) |
-| A `spedas_*` MCP tool returns wrong data, crashes, or is missing | **science tooling** | [spedas/spedas_mcp](https://github.com/spedas/spedas_mcp/issues) |
+| A `spedas_*` MCP tool returns wrong data, crashes, or is missing | **science tooling** | [spedas/spedas_agent_kit](https://github.com/spedas/spedas_agent_kit/issues) |
 | `ModuleNotFoundError: pyspedas`, PySPEDAS recipe fails in your Python env | **your environment** | This is expected — the plugin does not install PySPEDAS. See the README "two layers" section. |
 
 When in doubt, file here and we will redirect.
@@ -45,7 +45,7 @@ python scripts/validate_plugin.py
 python scripts/test_validate_plugin.py
 python scripts/test_smoke_groups.py
 
-# Runtime smoke: launches the real spedas-mcp server (needs uv + network):
+# Runtime smoke: launches the real spedas-agent-kit server (needs uv + network):
 python scripts/smoke_mcp_runtime.py --json --timeout 300
 ```
 

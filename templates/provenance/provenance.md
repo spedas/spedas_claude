@@ -35,4 +35,4 @@ signature present, units verified, etc.), and what is still unverified.
 ## Reproduce
 
 FILL: exact steps / tool calls (see `tool_calls.jsonl`) and the resolved
-`spedas_mcp` commit (see `environment.txt`).
+`spedas_agent_kit` commit (see `environment.txt`).

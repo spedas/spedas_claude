@@ -6,7 +6,7 @@ addresses issues #5 (cross-platform cache paths / `${HOME}` expansion) and #17
 (documenting the configurable variables and explaining the leaked `XHELIO_*` /
 `PDSMCP_*` names).
 
-Everything here was verified against the current `spedas_mcp` server entrypoint
+Everything here was verified against the current `spedas_agent_kit` server entrypoint
 and the `xhelio-cdaweb` / `xhelio-pds` / `xhelio-spice` backends — these are the
 *only* variables those code paths read. No variable is invented; if the server
 does not read it, it is not listed.
@@ -16,14 +16,14 @@ does not read it, it is not listed.
 - **You usually need to set nothing.** The packaged `.mcp.json` already points the
   three cache directories at `${HOME}/.cache/spedas/...`. If those defaults work
   for you, skip the rest.
-- The variable **names are fixed by the upstream server** (`spedas_mcp`) and its
+- The variable **names are fixed by the upstream server** (`spedas_agent_kit`) and its
   backends. We cannot rename them to drop the `XHELIO_*` / `PDSMCP_*` prefixes
   without breaking the server. They are documented here so the leak is explained
   rather than surprising — see [Naming](#naming-why-you-see-xhelio_-and-pdsmcp_).
 
 ## 1. Mandatory setup
 
-**None.** No environment variable is required. `uvx` resolves `spedas_mcp` on first
+**None.** No environment variable is required. `uvx` resolves `spedas_agent_kit` on first
 run, and each backend falls back to a sensible default cache directory if you set
 nothing (see the defaults column below). The only hard requirement is `uv`/`uvx`
 on `PATH` (see the README Requirements section).
@@ -119,11 +119,11 @@ the cache stays empty across runs, expansion or writability is the likely cause
 These are not specific to SPEDAS — they are standard `uv` and OS variables that
 control where the *toolchain* caches and writes temp files. `scripts/smoke_mcp_runtime.py`
 manages them to stay hermetic; document/set them yourself for HPC or air-gapped
-runs. They are read by `uv`/the OS, not by `spedas_mcp` code.
+runs. They are read by `uv`/the OS, not by `spedas_agent_kit` code.
 
 | Variable | What it controls | When to set it |
 |---|---|---|
-| `UV_CACHE_DIR` | Where `uv`/`uvx` caches the resolved `spedas_mcp` environment | Redirect off `$HOME` on HPC; pre-populate for air-gapped/offline use |
+| `UV_CACHE_DIR` | Where `uv`/`uvx` caches the resolved `spedas_agent_kit` environment | Redirect off `$HOME` on HPC; pre-populate for air-gapped/offline use |
 | `XDG_CACHE_HOME` | XDG cache root that several tools honor | Same as above on Linux-like systems |
 | `TMPDIR` | Temp directory for the subprocess | Read-only/again-quota `/tmp`; large intermediate files |
 
@@ -133,7 +133,7 @@ deployment, pre-warm `UV_CACHE_DIR` once with network access:
 
 ```bash
 UV_CACHE_DIR=/shared/uv-cache \
-  uvx --from "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3" spedas-mcp --help
+  uvx --from "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7" spedas-agent-kit --help
 ```
 
 then point `.mcp.json`'s process at the same `UV_CACHE_DIR`.
@@ -153,7 +153,7 @@ backends, not by this plugin**:
 This plugin **cannot alias them** to neutral names without the server changing
 first: if you rename the variable, the server simply won't read it and silently
 falls back to the default cache. So treat these names as fixed upstream identifiers.
-If `spedas_mcp` later exposes neutral aliases, this document should be updated to
+If `spedas_agent_kit` later exposes neutral aliases, this document should be updated to
 prefer them. Until then, the SPEDAS-facing wording is "cache/kernel directory";
 the `XHELIO_*` / `PDSMCP_*` strings are just the keys the server happens to read.
 
@@ -167,6 +167,6 @@ per-call arguments.
 ## See also
 
 - [`../.mcp.json`](../.mcp.json) — the packaged defaults.
-- [`dependencies.md`](dependencies.md) — pinning the `spedas_mcp` source for reproducibility.
+- [`dependencies.md`](dependencies.md) — pinning the `spedas_agent_kit` source for reproducibility.
 - [`safety.md`](safety.md) — the fetch/kernel safety boundary (what fills these caches and when).
 - [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md) — diagnosing cache/permission failures.

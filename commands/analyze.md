@@ -30,10 +30,10 @@ it selects and sequences tools; it performs no compute itself.
 ## Tool-maturity guardrail (do not overclaim)
 
 The transformation/plotting tools are **proposed analysis-layer MCP tools**
-(`spedas_mcp #12–#22`) and may **not** be released yet. For every recommended step:
+(`spedas_agent_kit #12–#22`) and may **not** be released yet. For every recommended step:
 
 - Tag current vs. proposed tools (the recipe reference marks proposed ones
-  `[proposed: spedas_mcp #NN]`).
+  `[proposed: spedas_agent_kit #NN]`).
 - **Confirm a proposed tool is live** via `spedas_overview` / the active tool list
   before presenting it as runnable.
 - If a tool is not available, give the **pyspedas fallback** (run the named function in

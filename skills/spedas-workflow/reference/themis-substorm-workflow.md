@@ -5,14 +5,14 @@ magnetometers, following **plan → fetch → analyze → plot**. Orchestration 
 
 > **Tool maturity:** discovery/planning/fetch tools are **current**; the analysis-layer
 > tools (`dynamic_power_spectrum`, `wavelet_transform`, `render_tplot`, and any
-> neutral-sheet/field-model step) are **proposed** (`spedas_mcp #12–#22`) and may not be
+> neutral-sheet/field-model step) are **proposed** (`spedas_agent_kit #12–#22`) and may not be
 > released — each is tagged `[proposed]`. Confirm with `spedas_overview`; otherwise use
 > the pyspedas fallback (`pyspedas-patterns.md`). See
 > [`analysis-recipes.md`](analysis-recipes.md) and
 > [`mission-loaders.md`](mission-loaders.md).
 
 > **Note on neutral-sheet location:** the gap issue mentions a neutral-sheet/locator
-> step. There is **no dedicated `spedas_mcp #12–#22` tool** for neutral-sheet location
+> step. There is **no dedicated `spedas_agent_kit #12–#22` tool** for neutral-sheet location
 > as of this writing; pyspedas exposes `neutral_sheet()` (`pyspedas/analysis/`). Treat
 > neutral-sheet location as a **pyspedas fallback** unless a future MCP tool is confirmed
 > live — do not assume an MCP tool name for it.
@@ -40,10 +40,10 @@ Confirm IDs/variables with `browse_data_parameters` first.
 
 1. **Preprocess** — uniform cadence + gap fill across probes/stations
    (`reduce_tres`/`avg_data` + `tinterpol` + `interp_gap`; pyspedas fallback).
-2. **Pi2 onset timing** — `dynamic_power_spectrum` `[proposed: spedas_mcp #15]`
+2. **Pi2 onset timing** — `dynamic_power_spectrum` `[proposed: spedas_agent_kit #15]`
    (fallback: `dpwrspc()`) on ground **B** to localize Pi2 pulsation power in time;
    compare onset across the station chain. Use `wavelet_transform`
-   `[proposed: spedas_mcp #15]` (fallback: `wavelet()` + `wave_signif()`) for
+   `[proposed: spedas_agent_kit #15]` (fallback: `wavelet()` + `wave_signif()`) for
    time-localized wave packets and significance bands.
 3. **Dipolarization** — inspect probe FGM B_z for the sharp increase; cross-time with the
    Pi2 onset.
@@ -53,7 +53,7 @@ Confirm IDs/variables with `browse_data_parameters` first.
 
 ## 4. Plot
 
-- `render_tplot` `[proposed: spedas_mcp #20]` (fallback: `tplot()`/`specplot()`, Agg,
+- `render_tplot` `[proposed: spedas_agent_kit #20]` (fallback: `tplot()`/`specplot()`, Agg,
   `display=False`): a stacked panel of ground-B dynamic spectra (Pi2), probe B_z
   (dipolarization), and ESA/SST flux, time-aligned so the onset cascade is visible.
 - Save the PNG path.

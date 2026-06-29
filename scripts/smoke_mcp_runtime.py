@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Runtime smoke-test the packaged SPEDAS MCP server configuration.
+"""Runtime smoke-test the packaged SPEDAS Agent Kit MCP server configuration.
 
 This is intentionally a no-credential, no-interactive-UI, no-data-fetch smoke.
 It reads the repo's .mcp.json, starts the configured ``spedas`` stdio MCP server,
@@ -68,8 +68,8 @@ TOOL_GROUPS: dict[str, list[str]] = {
     ],
 }
 
-# Baseline tools that must be present for the current pinned spedas_mcp
-# server. This is the 17-tool base surface from commit 5ac9e20; optional
+# Baseline tools that must be present for the current pinned spedas_agent_kit
+# server. This is the 17-tool base surface from commit 52ccfcb; optional
 # HAPI/FDSN entrypoints are registered but may report unavailable at call time
 # unless users install the corresponding extras.
 EXPECTED_CORE_TOOLS = [
@@ -135,7 +135,7 @@ def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
     """Split a pip/uv git source into (url_without_ref, ref).
 
     A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
-    forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
+    forms such as ``git+ssh://git@github.com/spedas/spedas_agent_kit.git`` also contain
     ``@`` before the final slash; those must NOT be treated as pinned refs. The
     input may be a bare git URL or a PEP 508 direct reference with extras.
     """
@@ -166,12 +166,12 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
     """Derive a compact dependency-audit object from the configured server args.
 
     This is issue #3's audit trail: from ``.mcp.json`` alone (no network) we can
-    report the configured ``spedas_mcp`` git URL, the pinned ref and whether it is
+    report the configured ``spedas_agent_kit`` git URL, the pinned ref and whether it is
     a full commit SHA / tag / floating default branch, the MCP protocol
     requirement and whether it carries an upper bound, and the console entrypoint.
 
     Because the default source is pinned to a full SHA, the parsed ``@<sha>`` is
-    the resolved ``spedas_mcp`` commit — no ``uv pip show`` / network call is
+    the resolved ``spedas_agent_kit`` commit — no ``uv pip show`` / network call is
     needed in the normal smoke path.
     """
     args = server.get("args") or []
@@ -187,9 +187,9 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
     # the console entrypoint.
     from_value = _value_after("--from") or ""
     git_url, pinned_ref = _split_git_url_ref(from_value)
-    _, spedas_mcp_extras = _extract_git_source_and_extras(from_value)
+    _, spedas_agent_kit_extras = _extract_git_source_and_extras(from_value)
 
-    is_spedas_mcp_source = "github.com/spedas/spedas_mcp" in from_value
+    is_spedas_agent_kit_source = "github.com/spedas/spedas_agent_kit" in from_value
 
     if pinned_ref is None:
         ref_kind = "floating"          # no @ref -> resolves default branch HEAD each run
@@ -212,15 +212,15 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
     return {
         "configured_git_url": git_url or None,
         "from_arg": from_value or None,
-        "is_spedas_mcp_source": is_spedas_mcp_source,
+        "is_spedas_agent_kit_source": is_spedas_agent_kit_source,
         "pinned_ref": pinned_ref,
         "ref_kind": ref_kind,
         "is_pinned": ref_kind != "floating",
-        "resolved_spedas_mcp_commit": pinned_ref if ref_kind == "commit" else None,
+        "resolved_spedas_agent_kit_commit": pinned_ref if ref_kind == "commit" else None,
         "mcp_requirement": mcp_requirement,
         "mcp_has_upper_bound": has_upper_bound,
-        "spedas_mcp_extras": sorted(spedas_mcp_extras),
-        "analysis_extra_enabled": "analysis" in spedas_mcp_extras,
+        "spedas_agent_kit_extras": sorted(spedas_agent_kit_extras),
+        "analysis_extra_enabled": "analysis" in spedas_agent_kit_extras,
         "entrypoint": entrypoint,
     }
 
@@ -647,10 +647,10 @@ def main() -> int:
         print(f"tool_count: {payload['tool_count']}")
         # Issue #3 audit trail: surface the configured source/pin in human mode too.
         da = dependency_audit
-        print(f"spedas_mcp source: {da['from_arg']}")
+        print(f"spedas_agent_kit source: {da['from_arg']}")
         print(
             f"  pinned: {da['is_pinned']} (ref_kind={da['ref_kind']}, "
-            f"resolved_commit={da['resolved_spedas_mcp_commit']})"
+            f"resolved_commit={da['resolved_spedas_agent_kit_commit']})"
         )
         print(
             f"  mcp requirement: {da['mcp_requirement']} "
@@ -658,7 +658,7 @@ def main() -> int:
         )
         print(
             "  extras: "
-            f"{','.join(da['spedas_mcp_extras']) or '(none)'} "
+            f"{','.join(da['spedas_agent_kit_extras']) or '(none)'} "
             f"(analysis={da['analysis_extra_enabled']})"
         )
         for name, info in groups.items():

@@ -141,7 +141,7 @@ Notes: OMNI is already time-shifted to Earth — preferred for driver/context. I
 Notes: dataset IDs here are especially release-string sensitive (`REL04`, frame/cadence
 suffixes) — **always confirm via `browse_data_parameters`**. Radiation-belt analysis maps
 flux to L-shell; see [`rbsp-radiation-belt-workflow.md`](rbsp-radiation-belt-workflow.md)
-and the proposed `calculate_lshell` tool (`spedas_mcp #17`).
+and the proposed `calculate_lshell` tool (`spedas_agent_kit #17`).
 
 ---
 

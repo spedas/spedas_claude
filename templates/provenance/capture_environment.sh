@@ -8,27 +8,28 @@
 # What it records:
 #   - timestamp, OS/kernel/arch
 #   - uv / uvx version (the toolchain that runs the MCP server)
-#   - the resolved spedas_mcp upstream commit (lightweight `git ls-remote`, metadata
+#   - the resolved spedas_agent_kit upstream commit (lightweight `git ls-remote`, metadata
 #     only — no clone, no fetch, no kernel download). Skipped gracefully if offline
 #     or if SPEDAS_PROVENANCE_NO_NETWORK=1 is set.
 #   - cache/kernel directories in effect (the XHELIO_*/PDSMCP_* env vars)
 #   - with --pyspedas: local python version + pyspedas/pytplot/numpy versions
 #
 # It performs NO data fetch and NO SPICE kernel download. The only network call is
-# the optional `git ls-remote` to resolve the spedas_mcp commit; disable it with
+# the optional `git ls-remote` to resolve the spedas_agent_kit commit; disable it with
 # SPEDAS_PROVENANCE_NO_NETWORK=1 for fully offline/air-gapped runs.
 #
 # Environment overrides:
-#   SPEDAS_MCP_REPO            override the upstream repo URL whose HEAD is resolved
+#   SPEDAS_AGENT_KIT_REPO      override the upstream repo URL whose HEAD is resolved
 #                              (for forks/mirrors/air-gapped sources); defaults to the
-#                              official https://github.com/spedas/spedas_mcp.git
+#                              official https://github.com/spedas/spedas_agent_kit.git
+#   SPEDAS_MCP_REPO            legacy alias for SPEDAS_AGENT_KIT_REPO
 #   SPEDAS_PROVENANCE_NO_NETWORK=1   skip the `git ls-remote` HEAD resolution
 set -u
 
 PYSPEDAS=0
 [ "${1:-}" = "--pyspedas" ] && PYSPEDAS=1
 
-SPEDAS_MCP_REPO="${SPEDAS_MCP_REPO:-https://github.com/spedas/spedas_mcp.git}"
+SPEDAS_AGENT_KIT_REPO="${SPEDAS_AGENT_KIT_REPO:-${SPEDAS_MCP_REPO:-https://github.com/spedas/spedas_agent_kit.git}}"
 
 echo "# SPEDAS provenance environment capture"
 echo "captured_at: $(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo unknown)"
@@ -52,19 +53,19 @@ else
 fi
 echo
 
-echo "## Resolved spedas_mcp upstream commit"
-echo "repo: ${SPEDAS_MCP_REPO}"
+echo "## Resolved spedas_agent_kit upstream commit"
+echo "repo: ${SPEDAS_AGENT_KIT_REPO}"
 if [ "${SPEDAS_PROVENANCE_NO_NETWORK:-0}" = "1" ]; then
-  echo "spedas_mcp_head: SKIPPED (SPEDAS_PROVENANCE_NO_NETWORK=1)"
+  echo "spedas_agent_kit_head: SKIPPED (SPEDAS_PROVENANCE_NO_NETWORK=1)"
 elif command -v git >/dev/null 2>&1; then
-  HEAD_LINE="$(git ls-remote "${SPEDAS_MCP_REPO}" HEAD 2>/dev/null | head -n1)"
+  HEAD_LINE="$(git ls-remote "${SPEDAS_AGENT_KIT_REPO}" HEAD 2>/dev/null | head -n1)"
   if [ -n "${HEAD_LINE}" ]; then
-    echo "spedas_mcp_head: ${HEAD_LINE%%	*}"
+    echo "spedas_agent_kit_head: ${HEAD_LINE%%	*}"
   else
-    echo "spedas_mcp_head: UNRESOLVED (offline or repo unreachable) — record manually"
+    echo "spedas_agent_kit_head: UNRESOLVED (offline or repo unreachable) — record manually"
   fi
 else
-  echo "spedas_mcp_head: git not available — record manually"
+  echo "spedas_agent_kit_head: git not available — record manually"
 fi
 echo "# NOTE: if .mcp.json pins '@<ref>', record that pinned ref here instead."
 echo

@@ -1,7 +1,7 @@
 # Hooks
 
 `hooks/hooks.json` ships with an **enabled-by-default `PreToolUse` safety gate**
-for issue #6. It runs before SPEDAS MCP calls that can perform real archive data
+for issue #6. It runs before SPEDAS Agent Kit MCP calls that can perform real archive data
 fetches or large SPICE kernel downloads.
 
 ## Default guard

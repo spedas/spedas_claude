@@ -6,7 +6,7 @@ references MCP tools and pyspedas functions; the plugin performs no compute itse
 
 > **Tool maturity:** discovery/planning/fetch tools are **current**; the analysis-layer
 > tools (`generate_fac_matrix`, `analyze_minvar_coordinates`, particle moments/spectra,
-> `render_tplot`) are **proposed** (`spedas_mcp #12–#22`) and may not be released —
+> `render_tplot`) are **proposed** (`spedas_agent_kit #12–#22`) and may not be released —
 > each is tagged `[proposed]`. Confirm with `spedas_overview` / the live tool list; if a
 > tool is not yet available, use the pyspedas fallback in your own environment
 > (`pyspedas-patterns.md`). See [`analysis-recipes.md`](analysis-recipes.md) for the
@@ -42,13 +42,13 @@ Confirm dataset IDs/variables with `browse_data_parameters` before fetching
    (`interp_gap`); despike (`yclip`/`deflag`). No dedicated MCP tool yet — pyspedas
    fallback. See the data-preparation section of [`analysis-recipes.md`](analysis-recipes.md).
 2. **Boundary normal (LMN)** — `analyze_minvar_coordinates`
-   `[proposed: spedas_mcp #14]` (fallback: `minvar()`) on the FGM **B** series across
+   `[proposed: spedas_agent_kit #14]` (fallback: `minvar()`) on the FGM **B** series across
    the crossing. Read the eigenvalues + normal vector.
 3. **(Optional) Field-aligned frame** — `generate_fac_matrix`
-   `[proposed: spedas_mcp #13]` (fallback: `fac_matrix_make()`) if you need ∥/⊥
+   `[proposed: spedas_agent_kit #13]` (fallback: `fac_matrix_make()`) if you need ∥/⊥
    decomposition of fluctuations.
 4. **Plasma moments** across the boundary — `compute_particle_moments`
-   `[proposed: spedas_mcp #18]` (fallback: `moments_3d()`) from the distributions, with
+   `[proposed: spedas_agent_kit #18]` (fallback: `moments_3d()`) from the distributions, with
    the spacecraft potential and an energy range; confirm the density/velocity jump.
 5. **(Optional) Multi-spacecraft** — with 4 probes, gradient/curlometer or timing gives
    boundary motion and thickness (pyspedas fallback; preprocessing in step 1 is
@@ -56,7 +56,7 @@ Confirm dataset IDs/variables with `browse_data_parameters` before fetching
 
 ## 4. Plot
 
-- `render_tplot` `[proposed: spedas_mcp #20]` (fallback: pyspedas `tplot()`/`specplot()`,
+- `render_tplot` `[proposed: spedas_agent_kit #20]` (fallback: pyspedas `tplot()`/`specplot()`,
   Agg backend, `display=False`): stack **B** in LMN, |B|, density, and bulk velocity;
   the boundary should show the **B** rotation aligned with the density/velocity change.
 - Save the PNG path; do not inline the figure data.

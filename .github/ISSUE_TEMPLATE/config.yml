@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Science tool / data problem (spedas_mcp)
-    url: https://github.com/spedas/spedas_mcp/issues
+  - name: Science tool / data problem (spedas_agent_kit)
+    url: https://github.com/spedas/spedas_agent_kit/issues
     about: >-
       If a spedas_* MCP tool returns wrong data, crashes, or is missing, the
       problem is in the science server, not this wrapper. File it there.

@@ -16,14 +16,14 @@ Error appears
 │
 ├─ Server started, a TOOL returned an error or wrong shape
 │   ├─ message is about params/planning/source mapping/unknown source_type
-│   │      └─► B. SPEDAS MCP tool issue           (file: spedas_mcp)
+│   │      └─► B. SPEDAS Agent Kit MCP tool issue           (file: spedas_agent_kit)
 │   ├─ message is "no such variable / dataset / kernel / missing PDS label"
-│   │      └─► C. Backend / data gap              (file: backend archive or spedas_mcp)
+│   │      └─► C. Backend / data gap              (file: backend archive or spedas_agent_kit)
 │   └─ message is timeout / HTTP 429 / connection reset / archive down
 │          └─► D. External service limit          (no bug to file; retry/narrow)
 │
 └─ Everything "works" but the instructions/method were unclear or wrong
-       └─► E. Docs / skills gap                    (file: spedas_claude or spedas_mcp)
+       └─► E. Docs / skills gap                    (file: spedas_claude or spedas_agent_kit)
 ```
 
 First triage command for A vs. B/C: run the offline validator and the runtime
@@ -45,19 +45,19 @@ science tool runs.
 | Signal | Likely cause | Fix |
 |---|---|---|
 | `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide (https://docs.astral.sh/uv/getting-started/installation/); reopen shell |
-| Smoke hangs/times out on first run | `uvx` resolving the pinned `spedas_mcp` commit from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with 'mcp>=1.26.0,<2' --from git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3 spedas-mcp --help`, matching `.mcp.json`) |
+| Smoke hangs/times out on first run | `uvx` resolving the pinned `spedas_agent_kit` commit from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with 'mcp>=1.26.0,<2' --from git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7 spedas-agent-kit --help`, matching `.mcp.json`) |
 | `Failed to spawn` / `Permission denied` writing cache or temp | `UV_CACHE_DIR` / `XDG_CACHE_HOME` / `TMPDIR` or a cache dir is read-only / over quota | point them at a writable path ([`configuration.md`](../../../docs/configuration.md)); the smoke auto-falls-back, real runs do not |
-| `No solution found` / cannot resolve `spedas_mcp` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
-| `missing_core_tools` non-empty in the smoke | resolved `spedas_mcp` HEAD changed its tool surface | confirm/pin a known-good `spedas_mcp` ref ([`dependencies.md`](../../../docs/dependencies.md)) |
+| `No solution found` / cannot resolve `spedas_agent_kit` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
+| `missing_core_tools` non-empty in the smoke | resolved `spedas_agent_kit` HEAD changed its tool surface | confirm/pin a known-good `spedas_agent_kit` ref ([`dependencies.md`](../../../docs/dependencies.md)) |
 | Claude Code doesn't show the slash commands/skill | plugin dir not enabled, or resources not at the plugin root | re-enable the plugin dir; run `validate_plugin.py` to confirm the layout/resource paths |
 | `validate_plugin.py`: a declared path does not resolve | a resource moved/renamed but `.claude-plugin/plugin.json` still points at the old path | correct the path key (paths are plugin-root-relative) or move the resource |
 | `ModuleNotFoundError: No module named 'pyspedas'` | the **PySPEDAS layer is not installed** — separate from the MCP layer | not an MCP bug: `pip install pyspedas` in *your* Python env (see README "Architecture: two independent layers") |
 
-**Attach:** `environment.txt` (uv/uvx version, OS, resolved `spedas_mcp` commit),
+**Attach:** `environment.txt` (uv/uvx version, OS, resolved `spedas_agent_kit` commit),
 the exact `.mcp.json` `command`/`args`, and the smoke's JSON output.
 **File at:** https://github.com/spedas/spedas_claude/issues
 
-## B. SPEDAS MCP tool issue → file in `spedas_mcp`
+## B. SPEDAS Agent Kit MCP tool issue → file in `spedas_agent_kit`
 
 The server runs and lists tools, but a tool's *behavior* is wrong: bad parameter
 mapping, planning semantics, an unexpected error shape, or `unknown source_type`.
@@ -67,17 +67,17 @@ mapping, planning semantics, an unexpected error shape, or `unknown source_type`
 | `unknown source_type: ...` | passed a `source_type` outside `cdaweb`/`pds`/`spice` |
 | `SPICE is geometry/ephemeris, not a measurement product fetch` | called `fetch_data_product(source_type="spice")` — use `get_ephemeris`/`compute_distance`/`transform_coordinates` |
 | `fetch_data_product` rejects `limit` for PDS | PDS path doesn't support `limit`; narrow `start`/`stop`/`parameters` |
-| Planning/compare tool returns an unexpected/empty shape | tool-side logic in `spedas_mcp` |
+| Planning/compare tool returns an unexpected/empty shape | tool-side logic in `spedas_agent_kit` |
 
 Isolate facade vs. backend: if the unified tool misbehaves, try the equivalent
 backend tool (see [`backend-compatibility.md`](backend-compatibility.md)). If the
 backend tool works and the facade doesn't, the bug is in the facade layer.
 
 **Attach:** the exact tool name + arguments (from `tool_calls.jsonl`), the returned
-JSON, and the resolved `spedas_mcp` commit.
-**File at:** https://github.com/spedas/spedas_mcp/issues
+JSON, and the resolved `spedas_agent_kit` commit.
+**File at:** https://github.com/spedas/spedas_agent_kit/issues
 
-## C. Backend / data gap → file at the backend archive (or `spedas_mcp`)
+## C. Backend / data gap → file at the backend archive (or `spedas_agent_kit`)
 
 The tool worked but the *data* is missing or incomplete at the source.
 
@@ -90,7 +90,7 @@ The tool worked but the *data* is missing or incomplete at the source.
 **Attach:** `provenance.md` (dataset/product id, time range, the exact missing
 field) plus `tool_calls.jsonl`. For CDAWeb cache-bootstrap suspicion, include the
 cache root and whether it was writable.
-**File at:** the relevant archive (CDAWeb/PDS/NAIF) — or `spedas_mcp` if you think
+**File at:** the relevant archive (CDAWeb/PDS/NAIF) — or `spedas_agent_kit` if you think
 the backend mishandled present data.
 
 ## D. External service limit → usually no bug to file
@@ -106,16 +106,16 @@ Transient network/archive conditions.
 **Attach (only if it recurs and looks systemic):** timestamps, the request, and the
 HTTP status. Otherwise this is operational, not a bug.
 **File at:** the relevant archive (CDAWeb/PDS/NAIF) if an outage/limit is systemic;
-or https://github.com/spedas/spedas_mcp/issues if the limit *handling itself* (retry,
+or https://github.com/spedas/spedas_agent_kit/issues if the limit *handling itself* (retry,
 backoff, error shape) looks wrong.
 
-## E. Docs / skills gap → file in `spedas_claude` (or `spedas_mcp`)
+## E. Docs / skills gap → file in `spedas_claude` (or `spedas_agent_kit`)
 
 The tool works but the instructions or scientific method were unclear, missing, or
 wrong. This is a real, fileable class — first-user friction is a defect.
 
 **Attach:** which doc/skill/command misled you and what you expected.
-**File at:** `spedas_claude` for plugin docs/skill/command issues; `spedas_mcp` for
+**File at:** `spedas_claude` for plugin docs/skill/command issues; `spedas_agent_kit` for
 tool-description/semantic doc issues.
 
 ---
@@ -128,12 +128,12 @@ report actionable. Most-valuable file per class:
 
 | Class | Most valuable artifact(s) |
 |---|---|
-| A. MCP wrapper / startup | `environment.txt` (uv/uvx + resolved `spedas_mcp` commit), `.mcp.json`, smoke JSON |
-| B. SPEDAS MCP tool | `tool_calls.jsonl` (exact args) + returned JSON + `spedas_mcp` commit |
+| A. MCP wrapper / startup | `environment.txt` (uv/uvx + resolved `spedas_agent_kit` commit), `.mcp.json`, smoke JSON |
+| B. SPEDAS Agent Kit MCP tool | `tool_calls.jsonl` (exact args) + returned JSON + `spedas_agent_kit` commit |
 | C. Backend / data gap | `provenance.md` (dataset id, time range, missing field) + `tool_calls.jsonl` |
 | D. External service limit | timestamps + request + HTTP status (only if systemic) |
 | E. Docs / skills gap | the misleading doc reference + expected-vs-actual |
 
-The single field that unblocks A/B/C fastest is the **resolved `spedas_mcp`
+The single field that unblocks A/B/C fastest is the **resolved `spedas_agent_kit`
 commit** — capture it (see [`dependencies.md`](../../../docs/dependencies.md) and
 `capture_environment.sh`).

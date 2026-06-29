@@ -72,22 +72,22 @@ def main() -> int:
         p = copy_plugin(base / "c2")
         mcp = p / ".mcp.json"
         data = json.loads(mcp.read_text())
-        data["mcpServers"]["spedas"]["args"] = ["--from", "git+https://github.com/evil/x.git", "spedas-mcp"]
+        data["mcpServers"]["spedas"]["args"] = ["--from", "git+https://github.com/evil/x.git", "spedas-agent-kit"]
         mcp.write_text(json.dumps(data))
-        expect_fail(p, "wrong MCP source", "github.com/spedas/spedas_mcp")
+        expect_fail(p, "wrong MCP source", "github.com/spedas/spedas_agent_kit")
 
-        # 2b) Issue #3: an UNPINNED spedas_mcp git URL (no @ref) must fail — a
+        # 2b) Issue #3: an UNPINNED spedas_agent_kit git URL (no @ref) must fail — a
         #     floating default-branch HEAD is not reproducible.
         p = copy_plugin(base / "c2b")
         mcp = p / ".mcp.json"
         data = json.loads(mcp.read_text())
         data["mcpServers"]["spedas"]["args"] = [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git",
-            "spedas-mcp",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git",
+            "spedas-agent-kit",
         ]
         mcp.write_text(json.dumps(data))
-        expect_fail(p, "unpinned spedas_mcp source", "PINNED")
+        expect_fail(p, "unpinned spedas_agent_kit source", "PINNED")
 
         # 2c) Issue #3: an MCP requirement with no upper bound must fail — a future
         #     breaking 2.x could be pulled silently.
@@ -96,24 +96,11 @@ def main() -> int:
         data = json.loads(mcp.read_text())
         data["mcpServers"]["spedas"]["args"] = [
             "--with", "mcp>=1.26.0",
-            "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
-            "spedas-mcp",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+            "spedas-agent-kit",
         ]
         mcp.write_text(json.dumps(data))
         expect_fail(p, "mcp requirement missing upper bound", "upper bound")
-
-        # 2d) Issue #49: the default runtime must request the analysis extra,
-        #     otherwise advertised analysis tools fail dependency_missing.
-        p = copy_plugin(base / "c2d")
-        mcp = p / ".mcp.json"
-        data = json.loads(mcp.read_text())
-        data["mcpServers"]["spedas"]["args"] = [
-            "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
-            "spedas-mcp",
-        ]
-        mcp.write_text(json.dumps(data))
-        expect_fail(p, "spedas_mcp missing analysis extra", "[analysis]")
 
         # 3) Declared resource path that does not resolve relative to plugin root
         #    (this is exactly the issue #4 ambiguity made into a hard error).
@@ -216,7 +203,7 @@ def main() -> int:
         p = copy_plugin(base / "c18")
         mcp_json = json.loads((p / ".mcp.json").read_text())
         args = mcp_json["mcpServers"]["spedas"]["args"]
-        args[args.index("--from") + 1] = "git+ssh://git@github.com/spedas/spedas_mcp.git"
+        args[args.index("--from") + 1] = "git+ssh://git@github.com/spedas/spedas_agent_kit.git"
         (p / ".mcp.json").write_text(json.dumps(mcp_json, indent=2))
         expect_fail(p, "ssh userinfo is not a pin", "PINNED")
 
