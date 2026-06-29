@@ -4,9 +4,9 @@ This plugin exposes the SPEDAS MCP primary surface (17 base tools at the pinned
 `spedas_mcp` commit) plus analysis tools enabled by the default `[analysis]` extra.
 Some tools perform **real network downloads**:
 mission data products and SPICE kernels. This document defines the safety
-boundary, the opt-in language to use, and what to do before enabling real
-fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook the
-(currently intentional-empty) `hooks/hooks.json` plan refers to.
+boundary, the opt-in language to use, and what to verify before approving real
+fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook for the
+enabled default `hooks/hooks.json` guard.
 
 > **Caveat:** the tools and their fetch/kernel behavior live in the upstream
 > `spedas_mcp` server, which `.mcp.json` now resolves from a **pinned commit**
@@ -48,7 +48,7 @@ For SPICE:
 Do **not** widen a time range, add probes, or escalate from one dataset to "all"
 without a fresh confirmation.
 
-## Before you enable real fetches (checklist)
+## Before you approve real fetches (checklist)
 
 1. **Plan first.** Run the planning/browse tools and confirm dataset id, parameters,
    and the *narrowest* useful time range.
@@ -64,34 +64,37 @@ without a fresh confirmation.
 
 ## Enforcement plan & `hooks/hooks.json`
 
-`hooks/hooks.json` ships as an **intentional empty placeholder** (`{"hooks": []}`).
-This is a deliberate, documented choice, not a regression. The intent is machine-checked
-by a sidecar contract, [`../hooks/default_posture.json`](../hooks/default_posture.json),
-which declares `"spedas_default_hook_posture": "deferred"` and links this issue and the
-opt-in example. The validator (`scripts/validate_plugin.py`) asserts that while the hooks
-file is empty the contract exists and stays consistent, so an empty array is never read
-as a silent regression and a malformed hook still fails CI.
+`hooks/hooks.json` now ships an **enabled-by-default `PreToolUse` safety gate** for
+issue #6. The hook matches real data-fetch tools and kernel-download-capable geometry
+calls, then returns a Claude Code hook response with `permissionDecision: "ask"` so
+the call pauses for explicit permission before network or kernel side effects proceed.
 
-Enabling a `PreToolUse` gate **by default** is a maintainer/product decision, so
-**issue #6 remains open** for that stronger default enforcement; this release ships no
-default state-mutating hook and only contracts the empty posture as intentional.
+The default guard is deliberately narrow:
 
-We do **not** ship an active `PreToolUse` gate by default because a hook that blocks
-or rewrites tool calls changes the user's runtime behavior, and this plugin should
-not mutate that behavior without the user opting in. Instead:
+- metadata/planning/search/status tools remain quiet;
+- `fetch_data_product`, `fetch_hapi_data`, `fetch_fdsn_data`, and legacy fetch names
+  ask before downloading archive data;
+- `get_ephemeris`, `compute_distance`, and `transform_coordinates` ask only when
+  `allow_kernel_download: true` is present;
+- legacy `manage_spice_kernels` asks for mutating/download actions, but read-only
+  status/list actions stay quiet.
 
-- The **prose discipline above** is the default boundary (the skill and commands
-  teach metadata-first, plan-before-fetch).
-- Per-CLI you can scope tools explicitly with `--allowedTools` (see the README's
-  "safe first live CLI check"): allow only discovery/planning tools for a dry run.
-- For users who *want* a runtime gate, a ready-to-enable example hook is provided —
-  **disabled by default** — at
-  [`../hooks/examples/pretooluse-fetch-guard.md`](../hooks/examples/pretooluse-fetch-guard.md).
-  It matches the current fetch tools and geometry calls that explicitly opt into kernel downloads, then warns before they run. Copy it into
-  `hooks/hooks.json` *only if you want it*; read its caveats first.
+Before approving a guarded call, confirm the science question, exact dataset/source
+or SPICE target, UTC time span, cache/output location, and provenance plan. If the
+hook reports a wide time range, narrow the window or run metadata/browse/discovery
+first. For source-specific fetches, prefer the unified `fetch_data_product` workflow
+unless the source-specific tool is necessary.
 
-If a future version ships an active gate, it must be opt-in (off by default) and
-documented here.
+The posture is machine-checked by
+[`../hooks/default_posture.json`](../hooks/default_posture.json),
+[`../hooks/fetch_guard.py`](../hooks/fetch_guard.py),
+[`../scripts/test_fetch_guard.py`](../scripts/test_fetch_guard.py), and
+`../scripts/validate_plugin.py`. CI fails if the default hook goes empty, loses the
+`PreToolUse` matcher, stops invoking the guard script, or drops one of the guarded
+tool names.
+
+If a local installation wants a different posture, edit `hooks/hooks.json` locally;
+for the repository default, keep the issue #6 guard enabled.
 
 ## See also
 

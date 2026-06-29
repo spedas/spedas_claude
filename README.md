@@ -48,10 +48,11 @@ you explicitly want local Python/tplot workflows.
   `/geometry PSP HCI 2024-06-25` or `/data cdaweb mms1_fgm_srvy_l2`. `/analyze` gives a
   guided analysis-tool selection from a science question (drives the analysis-recipe
   reference).
-- `hooks/hooks.json` — placeholder for future safety/provenance hooks.
+- `hooks/hooks.json` — enabled `PreToolUse` fetch/kernel safety gate (issue #6).
 - `scripts/validate_plugin.py` — offline packaging validator (run in CI).
 - `scripts/smoke_mcp_runtime.py` — real stdio MCP runtime smoke (verifies tool groups).
 - `scripts/test_smoke_groups.py` — offline self-tests for the smoke's tool-group check.
+- `scripts/test_fetch_guard.py` — offline self-tests for the default fetch/kernel hook.
 - `skills/spedas-workflow/reference/` — per-tool examples, geometry/SPICE, and
   unified-vs-backend guides, plus analysis guidance: `analysis-recipes.md` (science
   question → function → MCP tool chain), `mission-loaders.md` (mission/instrument →
@@ -67,7 +68,7 @@ you explicitly want local Python/tplot workflows.
 - [`uv`/`uvx`](https://docs.astral.sh/uv/) available on `PATH`.
 - Network access **the first time** `uvx` installs `spedas_mcp` from GitHub. After
   that, the resolved environment is cached by `uv`.
-- Python 3.10+ for the validation scripts (the MCP server itself requires 3.10+).
+- Python 3.10+ for the validation scripts and default hook guard (the MCP server itself requires 3.10+).
 
 ### Optional (only for your local PySPEDAS layer)
 
@@ -81,8 +82,8 @@ you explicitly want local Python/tplot workflows.
 
 - Cache/temp/network **environment variables** (mandatory vs. optional vs. advanced):
   [`docs/configuration.md`](docs/configuration.md).
-- **Fetch/kernel safety** boundary, opt-in language, and what to do before enabling
-  real downloads: [`docs/safety.md`](docs/safety.md).
+- **Fetch/kernel safety** boundary, default `PreToolUse` guard behavior, and what to
+  confirm before approving real downloads: [`docs/safety.md`](docs/safety.md).
 - **Failure taxonomy / triage runbook** (which error is which, where to file it):
   [`skills/spedas-workflow/reference/troubleshooting.md`](skills/spedas-workflow/reference/troubleshooting.md).
 - **Provenance templates** for reproducible runs:
@@ -269,11 +270,12 @@ and [`docs/dependencies.md`](docs/dependencies.md) for the narrative companion.
 ```bash
 python scripts/validate_plugin.py        # offline packaging validation
 python scripts/test_validate_plugin.py   # validator self-tests (negative cases)
+python scripts/test_fetch_guard.py       # default PreToolUse guard self-tests
 python scripts/test_smoke_groups.py      # offline tool-group check self-tests
 python scripts/smoke_mcp_runtime.py --json  # real MCP runtime smoke (needs uvx + first-run network)
 ```
 
-CI (`.github/workflows/validate.yml`) runs all three.
+CI (`.github/workflows/validate.yml`) runs the offline validator/self-tests on the matrix and the runtime MCP smoke on Linux.
 
 ## Common failure modes
 
@@ -283,6 +285,7 @@ CI (`.github/workflows/validate.yml`) runs all three.
 | `validate_plugin.py`: `spedas server must install from github.com/spedas/spedas_mcp` | `.mcp.json` points at a fork/wrong repo | restore the official `--from` URL |
 | `smoke_mcp_runtime.py` hangs or times out on first run | `uvx` is resolving `spedas-mcp[analysis]` from GitHub with no/blocked network | ensure network access for the first run; raise `--timeout`; pre-warm with `uvx --from "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3" spedas-mcp --help` |
 | Analysis tools return `dependency_missing` for `pyspedas`/`matplotlib` | `.mcp.json` lost the `spedas-mcp[analysis] @ ...` source spec, or an old plugin copy is enabled | restore the shipped `.mcp.json` and run `python scripts/validate_plugin.py` (issue #49 guard) |
+| Fetch/kernel calls pause for confirmation | the default issue #6 `PreToolUse` guard matched a real archive download or `allow_kernel_download: true` geometry call | confirm dataset/time/cache/provenance before approving, or locally edit `hooks/hooks.json` if your installation deliberately wants a different posture |
 | `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide: https://docs.astral.sh/uv/getting-started/installation/ |
 | `missing_core_tools` non-empty | the resolved `spedas_mcp` version changed its tool surface | confirm the `spedas_mcp` HEAD; pin a known-good ref (see dependencies doc) |
 | Claude Code does not see the slash commands/skill | plugin dir not enabled, or resources not at the plugin root | re-enable the plugin dir; run `validate_plugin.py` to confirm layout |

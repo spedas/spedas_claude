@@ -194,10 +194,10 @@ def validate_hooks(hooks_value) -> None:
         fail(f"{rel} must contain a top-level 'hooks' key")
         return
     hooks = data["hooks"]
-    # Claude Code accepts an object keyed by event name; an empty list/object is a
-    # valid placeholder. Anything else is a malformed hooks file.
+    # Claude Code accepts an object keyed by event name. The issue #6 posture
+    # validator below rejects an empty object/list for this repo's shipped default.
     if not isinstance(hooks, (dict, list)):
-        fail(f"{rel} 'hooks' must be an object (event->matchers) or an empty placeholder")
+        fail(f"{rel} 'hooks' must be an object (event->matchers) or list")
 
 
 _MCP_REQ_RE = re.compile(r"^mcp(?=[<>=!~])")
@@ -356,19 +356,20 @@ def validate_mcp(mcp_value) -> None:
 
 def validate_batch_c_docs() -> None:
     """Batch C (issues #5/#6/#9/#13/#14/#17): the cross-referenced docs, the
-    troubleshooting runbook, the provenance templates, and the opt-in hook example
-    must all exist. README/SKILL/safety link to these; a missing target is a broken
-    contract, so fail loudly the same way the skill reference-link check does.
+    troubleshooting runbook, the provenance templates, and the default guard/example
+    hook resources must all exist. README/SKILL/safety link to these; a missing
+    target is a broken contract, so fail loudly the same way the skill reference-link
+    check does.
     """
     # Repo docs cross-linked from README/SKILL/commands.
     require("docs/configuration.md")          # #5 / #17 env + cache config
     require("docs/safety.md")                 # #6 fetch/kernel boundary
     require("skills/spedas-workflow/reference/troubleshooting.md")  # #13 runbook
 
-    # #6: opt-in hook example referenced by docs/safety.md and hooks/README.md.
-    # These must be present so the "enable it yourself" path is real, and the
-    # shipped hooks.json must remain the intentional empty placeholder (not an
-    # accidentally-active hook).
+    # #6: enabled-by-default fetch/kernel guard plus compatibility example.
+    # The active guard is the runtime safety gate; the example doc/wrapper keeps
+    # older copied configs and human-facing references from going stale.
+    require("hooks/fetch_guard.py")
     require("hooks/examples/pretooluse-fetch-guard.md")
     require("hooks/examples/fetch_guard.py")
 
@@ -414,51 +415,67 @@ def validate_reproducibility_and_example() -> None:
             fail(f"examples/run_overview.py does not byte-compile: {exc.msg}")
 
 
-def validate_hooks_placeholder_intentional() -> None:
-    """#6: assert an empty ``hooks/hooks.json`` is a *deliberate, contracted* posture,
-    never a silently-accepted blank.
 
-    The structural check (valid JSON, ``hooks`` is an object/list) lives in
-    ``validate_hooks()``. This function adds the *intent* contract: when the shipped
-    ``hooks/hooks.json`` is the empty placeholder (``{"hooks": []}`` or ``{}``), a
-    machine-readable sidecar (``hooks/default_posture.json``) and the human docs that
-    explain the choice MUST be present and consistent. That makes three failure modes
-    loud rather than silent:
+REQUIRED_FETCH_GUARD_TOOLS = {
+    "mcp__spedas__fetch_data_product",
+    "mcp__spedas__fetch_hapi_data",
+    "mcp__spedas__fetch_fdsn_data",
+    "mcp__spedas__fetch_data",
+    "mcp__spedas__fetch_pds_data",
+    "mcp__spedas__manage_spice_kernels",
+    "mcp__spedas__get_ephemeris",
+    "mcp__spedas__compute_distance",
+    "mcp__spedas__transform_coordinates",
+}
 
-    - an empty hooks file with **no** posture contract (ambiguous: deferred or a
-      regression?);
-    - a posture contract that does **not** declare the deferred intent / name #6 /
-      point at the opt-in example (a half-edited or gutted contract);
-    - accidental removal of the docs or the opt-in example the contract references.
 
-    A *non-empty* ``hooks/hooks.json`` is treated as an enabled hook config and is
-    only structurally validated by ``validate_hooks()`` — this contract does not block
-    a future maintainer from shipping a real default hook.
+def _pretool_entries(hooks: object) -> list[dict]:
+    if not isinstance(hooks, dict):
+        return []
+    pretool = hooks.get("PreToolUse")
+    if not isinstance(pretool, list):
+        return []
+    return [entry for entry in pretool if isinstance(entry, dict)]
+
+
+def _entry_commands(entry: dict) -> list[str]:
+    commands: list[str] = []
+    for hook in entry.get("hooks", []):
+        if isinstance(hook, dict) and isinstance(hook.get("command"), str):
+            commands.append(hook["command"])
+    return commands
+
+
+def validate_hooks_default_posture() -> None:
+    """#6: assert the shipped plugin has an active default fetch/kernel guard.
+
+    Earlier unreleased builds intentionally shipped ``hooks/hooks.json`` empty and
+    kept issue #6 open. The product decision has now moved to the stronger posture:
+    a default ``PreToolUse`` hook must ask for explicit permission before real data
+    fetches or kernel-download-capable calls proceed. This validator makes that
+    posture hard to regress by checking the hook file, the sidecar contract, the
+    guard script, the matcher coverage, and the docs named by the contract.
     """
-    p = ROOT / "hooks" / "hooks.json"
-    if not p.exists():
-        return  # absence handled by validate_hooks() / convention.
+    hooks_path = ROOT / "hooks" / "hooks.json"
+    if not hooks_path.exists():
+        fail("missing hooks/hooks.json; issue #6 requires an enabled default PreToolUse fetch/kernel guard")
+        return
     try:
-        data = json.loads(p.read_text(encoding="utf-8"))
+        data = json.loads(hooks_path.read_text(encoding="utf-8"))
     except Exception:
         return  # validate_hooks() already reports malformed JSON.
     hooks = data.get("hooks")
-    # Non-empty => an enabled hook config; validate_hooks() already checks structure.
-    if hooks not in ([], {}):
+    if hooks in ([], {}):
+        fail("hooks/hooks.json is empty, but issue #6 now requires the enabled default PreToolUse fetch/kernel guard")
+        return
+    if not isinstance(hooks, dict):
+        fail("hooks/hooks.json must use an event-keyed object with PreToolUse for the issue #6 default guard")
         return
 
-    # --- Empty placeholder: require the explicit, consistent deferred contract. ---
-    readme = ROOT / "hooks" / "README.md"
-    if not readme.exists():
-        fail("hooks/hooks.json is an empty placeholder but hooks/README.md is missing; "
-             "document the intent (issue #6) so the empty array is not read as a regression")
-
     sidecar_rel = "hooks/default_posture.json"
-    sidecar = ROOT / "hooks" / "default_posture.json"
+    sidecar = ROOT / sidecar_rel
     if not sidecar.exists():
-        fail(f"hooks/hooks.json is the empty placeholder but the intentional-deferred "
-             f"posture contract {sidecar_rel} is missing; an empty hooks array must be "
-             f"explicitly contracted as intentional (issue #6), not silently accepted")
+        fail(f"{sidecar_rel} is missing; the enabled default hook posture must be machine-readable")
         return
     try:
         posture = json.loads(sidecar.read_text(encoding="utf-8"))
@@ -466,33 +483,67 @@ def validate_hooks_placeholder_intentional() -> None:
         fail(f"invalid JSON in {sidecar_rel}: {exc}")
         return
 
-    if posture.get("spedas_default_hook_posture") != "deferred":
-        fail(f"{sidecar_rel} must declare \"spedas_default_hook_posture\": \"deferred\" "
-             f"while hooks/hooks.json ships empty (issue #6)")
-    # The contract must name issue #6 somewhere so the empty array is traceable.
+    if posture.get("spedas_default_hook_posture") != "enabled":
+        fail(f"{sidecar_rel} must declare \"spedas_default_hook_posture\": \"enabled\" for issue #6")
     if "#6" not in json.dumps(posture) and "/issues/6" not in json.dumps(posture):
-        fail(f"{sidecar_rel} must reference issue #6 so the deferred posture is traceable")
-    # The contract must record the expected empty hooks shape and match reality.
-    expected = posture.get("expected_hooks_json")
-    if not isinstance(expected, dict):
-        fail(f"{sidecar_rel} must include an object 'expected_hooks_json' matching the "
-             f"shipped empty hooks/hooks.json placeholder (issue #6)")
-    elif expected.get("hooks") not in ([], {}):
-        fail(f"{sidecar_rel} 'expected_hooks_json' must describe the empty placeholder")
-    elif expected != data:
-        fail(f"{sidecar_rel} 'expected_hooks_json' does not match the shipped hooks/hooks.json; "
-             f"the contract is stale relative to the actual hooks file (issue #6)")
-    # The opt-in path the contract advertises must really exist, or the "enable it
-    # yourself" escape hatch is a dead reference.
-    opt_in = posture.get("opt_in_example")
-    if not isinstance(opt_in, str) or not opt_in.strip():
-        fail(f"{sidecar_rel} must name an 'opt_in_example' (the disabled-by-default hook the user can enable)")
-    elif not (ROOT / _strip_dotslash(opt_in)).exists():
-        fail(f"{sidecar_rel} 'opt_in_example' -> {opt_in!r} does not resolve to an existing file")
-    # Every doc the contract claims explains the posture must exist.
+        fail(f"{sidecar_rel} must reference issue #6 so the default guard stays traceable")
+
+    guard_script = posture.get("guard_script")
+    if not isinstance(guard_script, str) or not guard_script.strip():
+        fail(f"{sidecar_rel} must name guard_script for the enabled default hook")
+        guard_script = "hooks/fetch_guard.py"
+    guard_path = ROOT / _strip_dotslash(guard_script)
+    if not guard_path.exists():
+        fail(f"{sidecar_rel} guard_script -> {guard_script!r} does not resolve to an existing file")
+
+    guard_test = posture.get("guard_test")
+    if isinstance(guard_test, str) and guard_test.strip() and not (ROOT / _strip_dotslash(guard_test)).exists():
+        fail(f"{sidecar_rel} guard_test -> {guard_test!r} does not resolve to an existing file")
+
     for doc in posture.get("docs", []):
         if isinstance(doc, str) and doc.strip() and not (ROOT / _strip_dotslash(doc)).exists():
-            fail(f"{sidecar_rel} lists doc {doc!r} for the deferred posture, but it is missing")
+            fail(f"{sidecar_rel} lists doc {doc!r} for the enabled posture, but it is missing")
+
+    entries = _pretool_entries(hooks)
+    if not entries:
+        fail("hooks/hooks.json must define at least one PreToolUse matcher for the issue #6 fetch/kernel guard")
+        return
+
+    guard_rel = _strip_dotslash(guard_script)
+    guard_entries = [
+        entry for entry in entries
+        if any(guard_rel in cmd.replace("\\", "/") for cmd in _entry_commands(entry))
+    ]
+    if not guard_entries:
+        fail(f"hooks/hooks.json PreToolUse entries must invoke {guard_script} for the issue #6 guard")
+        return
+
+    # The guard path is rooted at CLAUDE_PLUGIN_ROOT. Keep it quoted so local plugin
+    # directories containing spaces do not split the hook command and silently lose
+    # the safety gate. This is a runtime behavior check, not just cosmetics.
+    quoted_root_path = f'"${{CLAUDE_PLUGIN_ROOT}}/{guard_rel}"'
+    single_quoted_root_path = f"'${{CLAUDE_PLUGIN_ROOT}}/{guard_rel}'"
+    for entry in guard_entries:
+        for cmd in _entry_commands(entry):
+            normalized = cmd.replace("\\", "/")
+            if guard_rel in normalized and quoted_root_path not in normalized and single_quoted_root_path not in normalized:
+                fail(f"hooks/hooks.json command for {guard_script} must quote the ${{CLAUDE_PLUGIN_ROOT}} path so plugin dirs with spaces still run the guard")
+
+    matcher_blob = "\n".join(str(entry.get("matcher", "")) for entry in guard_entries)
+    sidecar_tools = posture.get("matched_tools")
+    if isinstance(sidecar_tools, list):
+        sidecar_tool_set = {tool for tool in sidecar_tools if isinstance(tool, str) and tool}
+        missing_from_sidecar = REQUIRED_FETCH_GUARD_TOOLS - sidecar_tool_set
+        if missing_from_sidecar:
+            fail(
+                f"{sidecar_rel} matched_tools is missing required issue #6 guard tools: "
+                f"{', '.join(sorted(missing_from_sidecar))}"
+            )
+    # The canonical required set lives in code so the sidecar cannot silently
+    # shrink the enforcement surface and make the matcher check self-fulfilling.
+    for tool in sorted(REQUIRED_FETCH_GUARD_TOOLS):
+        if tool not in matcher_blob:
+            fail(f"hooks/hooks.json issue #6 matcher is missing {tool}")
 
 
 def validate_metadata(data: dict) -> None:
@@ -541,11 +592,11 @@ def main() -> int:
     require("skills/spedas-workflow/SKILL.md")
 
     # Batch C (#5/#6/#9/#13/#14/#17): cross-referenced docs, runbook, templates,
-    # and the opt-in hook example must resolve; hooks placeholder must be intentional.
+    # and the default fetch/kernel guard resources must resolve.
     validate_batch_c_docs()
     # Batch F (#32): pinning/reproducibility doc + documented first-run example.
     validate_reproducibility_and_example()
-    validate_hooks_placeholder_intentional()
+    validate_hooks_default_posture()
 
     if errors:
         for e in errors:

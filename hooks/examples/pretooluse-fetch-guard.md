@@ -1,43 +1,45 @@
-# Opt-in example: PreToolUse fetch/kernel guard
+# Default PreToolUse fetch/kernel guard reference
 
-> **Disabled by default. This is NOT active.** Nothing here runs unless *you* copy
-> it into `hooks/hooks.json`. The shipped `hooks/hooks.json` is an intentional empty
-> placeholder (see [`../../docs/safety.md`](../../docs/safety.md)).
+This repository now ships the SPEDAS fetch/kernel guard **enabled by default** in
+[`../hooks.json`](../hooks.json). This file is a reference copy for humans who want to
+restore the default config after local edits, or for older plugin copies that still
+pointed at the former example path.
 
 ## What it does
 
-A `PreToolUse` hook that fires before current network-download tools and before
-geometry tools when `allow_kernel_download=True`. It prints a **warning to
-context**; it does not block, mutate state, or download anything.
+A `PreToolUse` hook fires before current network-download tools and before geometry
+tools when `allow_kernel_download=True`. The companion script emits a Claude Code hook
+JSON response with `permissionDecision: "ask"`, so the call pauses for explicit
+permission instead of silently downloading data or kernels.
 
 It matches:
 
 - `mcp__spedas__fetch_data_product`
 - `mcp__spedas__fetch_hapi_data`
 - `mcp__spedas__fetch_fdsn_data`
+- legacy `mcp__spedas__fetch_data`
+- legacy `mcp__spedas__fetch_pds_data`
+- legacy `mcp__spedas__manage_spice_kernels`
 - `mcp__spedas__get_ephemeris`
 - `mcp__spedas__compute_distance`
 - `mcp__spedas__transform_coordinates`
 
-For geometry tools, the script warns only when the input includes
-`allow_kernel_download: true`; metadata/cache-gated calls remain quiet.
+For geometry tools, the script stays quiet unless the input includes
+`allow_kernel_download: true`; metadata/cache status calls remain quiet.
 
-## How to enable it
-
-1. Copy the JSON below into `hooks/hooks.json` (replace the empty `{"hooks": []}`).
-2. Re-run `python3 scripts/validate_plugin.py` to confirm the hooks file is still valid.
-3. Reload the plugin in Claude Code.
+## Default JSON
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "mcp__spedas__fetch_data_product|mcp__spedas__fetch_hapi_data|mcp__spedas__fetch_fdsn_data|mcp__spedas__get_ephemeris|mcp__spedas__compute_distance|mcp__spedas__transform_coordinates",
+        "matcher": "mcp__spedas__fetch_data_product|mcp__spedas__fetch_hapi_data|mcp__spedas__fetch_fdsn_data|mcp__spedas__fetch_data|mcp__spedas__fetch_pds_data|mcp__spedas__manage_spice_kernels|mcp__spedas__get_ephemeris|mcp__spedas__compute_distance|mcp__spedas__transform_coordinates",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/examples/fetch_guard.py"
+            "command": "python \"${CLAUDE_PLUGIN_ROOT}/hooks/fetch_guard.py\"",
+            "timeout": 5
           }
         ]
       }
@@ -46,6 +48,6 @@ For geometry tools, the script warns only when the input includes
 }
 ```
 
-The companion script is [`fetch_guard.py`](fetch_guard.py). It reads the standard
-Claude Code hook JSON on stdin, emits a single-line reminder to stderr, and exits
-`0` (non-blocking).
+The active companion script is [`../fetch_guard.py`](../fetch_guard.py). The local
+[`fetch_guard.py`](fetch_guard.py) file in this directory is only a compatibility
+wrapper that delegates to it.

@@ -24,6 +24,7 @@ See CONTRIBUTING.md for which problems belong here vs. in spedas/spedas_mcp.
 
 - [ ] `python scripts/validate_plugin.py`
 - [ ] `python scripts/test_validate_plugin.py`
+- [ ] `python scripts/test_fetch_guard.py`
 - [ ] `python scripts/test_smoke_groups.py`
 - [ ] `python scripts/smoke_mcp_runtime.py --json --timeout 300` (if MCP/runtime affected)
 - [ ] `git diff --check` (no whitespace errors)

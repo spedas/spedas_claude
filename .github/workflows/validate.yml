@@ -43,6 +43,8 @@ jobs:
         run: python scripts/validate_plugin.py
       - name: Validator self-tests (negative cases)
         run: python scripts/test_validate_plugin.py
+      - name: Fetch/kernel guard self-tests (offline)
+        run: python scripts/test_fetch_guard.py
       - name: Smoke tool-group self-tests (offline)
         run: python scripts/test_smoke_groups.py
       # Issue #5: cross-platform cache-path portability. The pure self-tests

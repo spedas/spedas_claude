@@ -130,7 +130,7 @@ def main() -> int:
         skill.write_text(skill.read_text().replace("name: spedas-workflow", ""))
         expect_fail(p, "skill missing name field", "name:")
 
-        # 5) Empty hooks file is fine (placeholder), but malformed hooks fails.
+        # 5) Malformed hooks still fail the structural hook validator.
         p = copy_plugin(base / "c5")
         (p / "hooks" / "hooks.json").write_text(json.dumps({"hooks": "not-an-object"}))
         expect_fail(p, "malformed hooks", "hooks")
@@ -155,11 +155,11 @@ def main() -> int:
         (p / "templates" / "provenance" / "request.json").unlink()
         expect_fail(p, "missing provenance template", "templates/provenance/request.json")
 
-        # 10) Batch C: the opt-in hook example (#6) must exist so the
-        #     "enable it yourself" path documented in docs/safety.md is real.
+        # 10) Batch C: the compatibility hook example (#6) must exist so older
+        #     copied configs/documentation do not point to a dead path.
         p = copy_plugin(base / "c10")
         (p / "hooks" / "examples" / "fetch_guard.py").unlink()
-        expect_fail(p, "missing opt-in hook example", "hooks/examples/fetch_guard.py")
+        expect_fail(p, "missing compatibility hook example", "hooks/examples/fetch_guard.py")
 
         # 11) Batch C: a malformed provenance JSON template must fail (a copy-paste
         #     run must start from valid JSON).
@@ -228,32 +228,28 @@ def main() -> int:
         (p / ".mcp.json").write_text(json.dumps(mcp_json, indent=2))
         expect_pass(p, "mcp compatible-release requirement passes")
 
-        # --- Batch U (#6): the empty-hooks intentional-deferred posture contract. ---
+        # --- Batch U (#6): enabled default PreToolUse fetch/kernel guard. ---
 
-        # 20) The healthy tree carries the sidecar posture contract; an empty
-        #     hooks/hooks.json WITH the contract passes (the intended steady state).
+        # 20) The healthy tree ships an active default guard, not the old empty
+        #     placeholder posture.
         p = copy_plugin(base / "c20")
-        assert (p / "hooks" / "default_posture.json").exists(), "fixture missing posture sidecar"
-        assert json.loads((p / "hooks" / "hooks.json").read_text())["hooks"] == []
-        expect_pass(p, "empty hooks with deferred-posture contract passes")
+        assert json.loads((p / "hooks" / "hooks.json").read_text())["hooks"] != []
+        expect_pass(p, "enabled default fetch/kernel guard passes")
 
-        # 21) Empty hooks/hooks.json WITHOUT the posture contract must fail — an
-        #     unexplained empty array is ambiguous (deferred vs. regression).
+        # 21) Regressing hooks/hooks.json to the old empty placeholder must fail.
         p = copy_plugin(base / "c21")
-        (p / "hooks" / "default_posture.json").unlink()
-        expect_fail(p, "empty hooks without posture contract", "default_posture.json")
+        (p / "hooks" / "hooks.json").write_text(json.dumps({"hooks": []}, indent=2))
+        expect_fail(p, "empty hooks now fails", "enabled default PreToolUse")
 
-        # 22) A posture contract that no longer declares the deferred intent must
-        #     fail (a gutted/half-edited contract is as bad as a missing one).
+        # 22) The sidecar must declare the enabled posture, not the old deferred one.
         p = copy_plugin(base / "c22")
         sidecar = p / "hooks" / "default_posture.json"
         sd = json.loads(sidecar.read_text())
-        sd["spedas_default_hook_posture"] = "enabled"
+        sd["spedas_default_hook_posture"] = "deferred"
         sidecar.write_text(json.dumps(sd, indent=2))
-        expect_fail(p, "posture contract not declaring deferred", "deferred")
+        expect_fail(p, "posture contract not declaring enabled", "enabled")
 
-        # 23) A posture contract that drops the issue #6 reference must fail — the
-        #     deferred posture must stay traceable to the issue.
+        # 23) The sidecar must keep the issue #6 traceability.
         p = copy_plugin(base / "c23")
         sidecar = p / "hooks" / "default_posture.json"
         sd = json.loads(sidecar.read_text())
@@ -262,35 +258,52 @@ def main() -> int:
         sidecar.write_text(json.dumps(sd, indent=2))
         expect_fail(p, "posture contract missing issue #6 reference", "issue #6")
 
-        # 24) The opt-in example the contract advertises must really exist; deleting
-        #     it (so the "enable it yourself" path is dead) must fail.
+        # 24) The active guard script the hook invokes must exist.
         p = copy_plugin(base / "c24")
-        (p / "hooks" / "examples" / "pretooluse-fetch-guard.md").unlink()
-        expect_fail(p, "posture contract opt-in example removed", "opt_in_example")
+        (p / "hooks" / "fetch_guard.py").unlink()
+        expect_fail(p, "default guard script removed", "hooks/fetch_guard.py")
 
-        # 25) A doc the contract claims explains the posture must exist; removing it
-        #     must fail (docs/safety.md is referenced by the contract).
+        # 25) A doc the enabled-posture contract names must exist.
         p = copy_plugin(base / "c25")
         (p / "docs" / "safety.md").unlink()
-        expect_fail(p, "posture contract doc removed", "safety.md")
+        expect_fail(p, "enabled posture doc removed", "safety.md")
 
-        # 26) A contract without expected_hooks_json must fail: without the expected
-        #     shape, the validator cannot prove the sidecar matches the shipped hooks.
+        # 26) Dropping one risky tool from the matcher must fail so new edits cannot
+        #     silently unguard a download/kernel surface.
         p = copy_plugin(base / "c26")
-        sidecar = p / "hooks" / "default_posture.json"
-        sd = json.loads(sidecar.read_text())
-        sd.pop("expected_hooks_json", None)
-        sidecar.write_text(json.dumps(sd, indent=2))
-        expect_fail(p, "posture contract missing expected_hooks_json", "expected_hooks_json")
+        hooks_path = p / "hooks" / "hooks.json"
+        hd = json.loads(hooks_path.read_text())
+        hd["hooks"]["PreToolUse"][0]["matcher"] = hd["hooks"]["PreToolUse"][0]["matcher"].replace(
+            "|mcp__spedas__fetch_fdsn_data", ""
+        )
+        hooks_path.write_text(json.dumps(hd, indent=2))
+        expect_fail(p, "matcher missing fetch_fdsn_data", "mcp__spedas__fetch_fdsn_data")
 
-        # 27) A stale contract whose expected_hooks_json no longer matches the
-        #     shipped hooks/hooks.json must fail (drift between contract and reality).
+        # 27) Keeping the matcher but no longer invoking the default guard script
+        #     must fail.
         p = copy_plugin(base / "c27")
+        hooks_path = p / "hooks" / "hooks.json"
+        hd = json.loads(hooks_path.read_text())
+        hd["hooks"]["PreToolUse"][0]["hooks"][0]["command"] = "echo no guard"
+        hooks_path.write_text(json.dumps(hd, indent=2))
+        expect_fail(p, "PreToolUse no longer invokes default guard", "hooks/fetch_guard.py")
+
+        # 28) The command must quote the CLAUDE_PLUGIN_ROOT path so plugin dirs with
+        #     spaces do not split the guard invocation at runtime.
+        p = copy_plugin(base / "c28")
+        hooks_path = p / "hooks" / "hooks.json"
+        hd = json.loads(hooks_path.read_text())
+        hd["hooks"]["PreToolUse"][0]["hooks"][0]["command"] = "python ${CLAUDE_PLUGIN_ROOT}/hooks/fetch_guard.py"
+        hooks_path.write_text(json.dumps(hd, indent=2))
+        expect_fail(p, "PreToolUse guard path not quoted", "must quote")
+
+        # 29) The sidecar cannot silently shrink the canonical required guard set.
+        p = copy_plugin(base / "c29")
         sidecar = p / "hooks" / "default_posture.json"
         sd = json.loads(sidecar.read_text())
-        sd["expected_hooks_json"] = {"hooks": "not-empty-and-not-matching"}
+        sd["matched_tools"] = [t for t in sd["matched_tools"] if t != "mcp__spedas__fetch_fdsn_data"]
         sidecar.write_text(json.dumps(sd, indent=2))
-        expect_fail(p, "stale posture contract expected_hooks_json", "default_posture.json")
+        expect_fail(p, "sidecar matched_tools missing canonical guard", "matched_tools")
 
 
     print("\nAll validator tests passed.")
