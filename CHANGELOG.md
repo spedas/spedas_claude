@@ -16,10 +16,12 @@ This repository is a thin Claude Code wrapper around the official
 
 | spedas-claude | Agent Kit source | MCP protocol range |
 |---|---|---|
-| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` (pinned commit, no extras) | `mcp>=1.26.0,<2` |
+| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa` (pinned commit, no extras) | `mcp>=1.26.0,<2` |
 
-The current pin exposes the **13-tool base** Agent Kit surface. The tool surface
-is tiered: optional **analysis** tools (`spedas-agent-kit[analysis]` extra),
+The current pin exposes the **13-tool base** Agent Kit surface and also exposes
+**23 MCP skill resources** (`spedas-skill://index` plus 22 bundled skills) without
+adding default tools. The tool surface is tiered: optional **analysis** tools
+(`spedas-agent-kit[analysis]` extra),
 **HAPI/FDSN datasource** tools (`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`), and legacy
 **CDAWeb/PDS compat** tools (`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`) are gated opt-ins
 rather than this wrapper's default.
@@ -29,7 +31,7 @@ rather than this wrapper's default.
 ### Changed
 - Point the Claude Code wrapper at the renamed `spedas_agent_kit` core repo and
   `spedas-agent-kit` command, repinned to the current Agent Kit main
-  `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` (was the rename commit
+  `4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa` (was the rename commit
   `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`).
 - Reframe this repository as a Claude-only thin wrapper. The Agent Kit core owns
   the MCP server, implementation, and canonical shared skills; Codex lives in the

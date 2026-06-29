@@ -72,7 +72,7 @@ TOOL_GROUPS: dict[str, list[str]] = {
 
 # Base/default tools that MUST be present for the current pinned spedas_agent_kit
 # server with no extras and no gate flags. This is the 13-tool base surface at
-# commit e504dae. Optional analysis tools, HAPI/FDSN datasource tools, and the
+# commit 4d3e9a. Optional analysis tools, HAPI/FDSN datasource tools, and the
 # legacy CDAWeb/PDS compat tools are NOT in this list because they are gated off
 # by default (see OPTIONAL_TIERS).
 BASE_EXPECTED_TOOLS = [
@@ -89,6 +89,11 @@ BASE_EXPECTED_TOOLS = [
     "get_ephemeris",
     "compute_distance",
     "transform_coordinates",
+]
+
+EXPECTED_SKILL_RESOURCES = [
+    "spedas-skill://index",
+    "spedas-skill://skills/spedas-workflow",
 ]
 
 # Backwards-compatible alias; the default wrapper surface is the base surface.
@@ -559,7 +564,18 @@ def _server_env(server: dict[str, Any], tmp: Path) -> dict[str, str]:
     return env
 
 
-async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: float) -> list[str]:
+def _read_resource_text(result: dict[str, Any]) -> str:
+    contents = result.get("contents") or []
+    if not isinstance(contents, list):
+        return ""
+    chunks: list[str] = []
+    for item in contents:
+        if isinstance(item, dict) and isinstance(item.get("text"), str):
+            chunks.append(item["text"])
+    return "\n".join(chunks)
+
+
+async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: float) -> dict[str, Any]:
     proc = await asyncio.create_subprocess_exec(
         command,
         *args,
@@ -578,7 +594,34 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
         await mcp_client.send_message(proc.stdin, {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}})
         result = await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 2, "tools/list"), timeout)
         tools = result.get("tools") or []
-        return [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)]
+        resources_result = await asyncio.wait_for(mcp_client.request(proc.stdout, proc.stdin, 3, "resources/list"), timeout)
+        resources = resources_result.get("resources") or []
+        skill_index = await asyncio.wait_for(
+            mcp_client.request(
+                proc.stdout,
+                proc.stdin,
+                4,
+                "resources/read",
+                {"uri": "spedas-skill://index"},
+            ),
+            timeout,
+        )
+        workflow_skill = await asyncio.wait_for(
+            mcp_client.request(
+                proc.stdout,
+                proc.stdin,
+                5,
+                "resources/read",
+                {"uri": "spedas-skill://skills/spedas-workflow"},
+            ),
+            timeout,
+        )
+        return {
+            "tools": [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)],
+            "resources": [resource.get("uri") for resource in resources if isinstance(resource, dict) and isinstance(resource.get("uri"), str)],
+            "skill_index_readable": "spedas-skill://skills/" in _read_resource_text(skill_index),
+            "workflow_skill_readable": "SPEDAS" in _read_resource_text(workflow_skill),
+        }
     finally:
         # Report server stderr on any abnormal exit, even when stderr is empty (#26).
         stderr = await mcp_client.drain_process(proc)
@@ -691,23 +734,37 @@ def main() -> int:
         cache_diagnostics = _cache_diagnostics(env, tmp)
         # Turn timeouts / server crashes / closed-stdout into a one-line message
         # and non-zero exit instead of a raw traceback (#26).
-        tools = mcp_client.run_client(
+        smoke = mcp_client.run_client(
             _smoke(command, command_args, env, args.timeout),
-            context="initialize/tools-list",
+            context="initialize/tools-list/resources",
         )
+        tools = smoke["tools"]
+        resources = smoke["resources"]
 
     missing = [name for name in BASE_EXPECTED_TOOLS if name not in tools]
+    missing_skill_resources = [uri for uri in EXPECTED_SKILL_RESOURCES if uri not in resources]
     groups = _check_groups(tools)
     missing_groups = [name for name, info in groups.items() if not info["ok"]]
     groups_ok = args.skip_group_check or not missing_groups
     # Optional tiers are reported for visibility only; they never gate ``ok``.
     optional_tiers = _check_optional_tiers(tools)
-    ok = not missing and groups_ok
+    skill_resources_ok = (
+        not missing_skill_resources
+        and smoke["skill_index_readable"]
+        and smoke["workflow_skill_readable"]
+    )
+    ok = not missing and groups_ok and skill_resources_ok
 
     payload = {
         "ok": ok,
         "tool_count": len(tools),
         "tools": tools,
+        "resource_count": len(resources),
+        "resources": resources,
+        "expected_skill_resources": EXPECTED_SKILL_RESOURCES,
+        "missing_skill_resources": missing_skill_resources,
+        "skill_index_readable": smoke["skill_index_readable"],
+        "workflow_skill_readable": smoke["workflow_skill_readable"],
         "base_expected_tools": BASE_EXPECTED_TOOLS,
         "missing_base_tools": missing,
         "optional_tiers": optional_tiers,
@@ -721,13 +778,14 @@ def main() -> int:
         # independent of the temp-isolation the smoke applies to its subprocess.
         # Surfaces an unresolved ${HOME} or a wrong root on the real OS (issue #5).
         "configured_cache_diagnostics": offline_cache_diagnostics(server, os.environ.copy()),
-        "note": "initialize + tools/list only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
+        "note": "initialize + tools/list + resources/list/read for packaged skills only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
     }
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
         print(f"SPEDAS plugin MCP runtime smoke: {'OK' if payload['ok'] else 'FAIL'}")
         print(f"tool_count: {payload['tool_count']}")
+        print(f"resource_count: {payload['resource_count']}")
         # Issue #3 audit trail: surface the configured source/pin in human mode too.
         da = dependency_audit
         print(f"spedas_agent_kit source: {da['from_arg']}")
@@ -761,6 +819,12 @@ def main() -> int:
             print("missing base tools: " + ", ".join(missing), file=sys.stderr)
         if missing_groups and not args.skip_group_check:
             print("incomplete tool groups: " + ", ".join(missing_groups), file=sys.stderr)
+        if missing_skill_resources:
+            print("missing skill resources: " + ", ".join(missing_skill_resources), file=sys.stderr)
+        if not smoke["skill_index_readable"]:
+            print("skill index resource was not readable", file=sys.stderr)
+        if not smoke["workflow_skill_readable"]:
+            print("spedas-workflow skill resource was not readable", file=sys.stderr)
     return 0 if payload["ok"] else 1
 
 
