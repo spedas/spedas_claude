@@ -12,7 +12,8 @@ SPEDAS MCP workflow must be reproducible years later.
 | Component | Pinned value | Source of truth |
 |---|---|---|
 | `spedas-claude` (this wrapper) | `0.1.0` on `main` (no release tag cut yet — see [CHANGELOG](CHANGELOG.md)) | `.claude-plugin/plugin.json` `version` |
-| `spedas_mcp` commit | `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` | `.mcp.json` `--from git+...@<sha>` |
+| `spedas_mcp` commit | `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` | `.mcp.json` `--from spedas-mcp[analysis] @ git+...@<sha>` |
+| Requested server extra | `analysis` | `.mcp.json` `--from` package extras; installs server-side PySPEDAS/matplotlib (issue #49) |
 | MCP protocol range | `mcp>=1.26.0,<2` | `.mcp.json` `--with` |
 
 The `spedas_mcp` source is pinned to a **full 40-char commit SHA**, so it is
@@ -25,7 +26,7 @@ into an install.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+         "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
          "spedas-mcp"]
 ```
 
@@ -45,8 +46,9 @@ In the JSON output, confirm:
   `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`
 - `dependency_audit.ref_kind` == `"commit"` and `dependency_audit.is_pinned` == `true`
 - `dependency_audit.mcp_has_upper_bound` == `true`
+- `dependency_audit.analysis_extra_enabled` == `true`
 - `ok` == `true` with empty `missing_core_tools` and empty `missing_groups`
-- record the reported `tool_count` in your release/methods notes
+- record the reported `tool_count` (currently 30) in your release/methods notes
 
 The offline packaging validator independently enforces that the source stays
 pinned and the MCP range stays bounded — a regression to a floating HEAD or an
@@ -72,7 +74,9 @@ When you want to move to a newer `spedas_mcp`:
    `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD` (or pick a tag).
 2. Review the upstream diff between the current pin and the target (see the
    supply-chain section below) before adopting it.
-3. Replace the `@<sha>` in `.mcp.json` `--from` with the new full SHA.
+3. Replace only the `@<sha>` in `.mcp.json` `--from`; keep the
+   `spedas-mcp[analysis] @ git+...` direct-reference shape unless you are
+   deliberately changing the default backend policy.
 4. Run `python scripts/smoke_mcp_runtime.py --json --timeout 300` and confirm
    `ok: true`, empty `missing_core_tools`/`missing_groups`, and note the new
    `tool_count`.

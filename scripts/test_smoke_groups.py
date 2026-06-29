@@ -182,7 +182,7 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+            "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
             "spedas-mcp",
         ],
     }
@@ -195,6 +195,8 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     assert audit["resolved_spedas_mcp_commit"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
     assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
     assert audit["mcp_has_upper_bound"] is True, audit
+    assert audit["spedas_mcp_extras"] == ["analysis"], audit
+    assert audit["analysis_extra_enabled"] is True, audit
     assert audit["entrypoint"] == "spedas-mcp", audit
     print("PASS: dependency audit parses a pinned full SHA + bounded mcp req")
 
@@ -235,6 +237,27 @@ def test_dependency_audit_does_not_treat_ssh_userinfo_as_pin() -> None:
     assert audit["mcp_requirement"] == "mcp~=1.26.0", audit
     assert audit["mcp_has_upper_bound"] is True, audit
     print("PASS: dependency audit rejects SSH userinfo as a pin and handles ~=")
+
+
+def test_dependency_audit_direct_ref_with_ssh_userinfo_and_ref() -> None:
+    # Issue #49 switched the default source to a PEP 508 direct reference with
+    # extras. Preserve the issue #3 userinfo guard even for that newer shape:
+    # git@github.com is not a pin, but a final @<sha> after the repo path is.
+    server = {
+        "args": [
+            "--with", "mcp>=1.26.0,<2",
+            "--from", "spedas-mcp[analysis] @ git+ssh://git@github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+            "spedas-mcp",
+        ],
+    }
+    audit = smoke._parse_dependency_audit(server)
+    assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_mcp.git", audit
+    assert audit["pinned_ref"] == "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3", audit
+    assert audit["ref_kind"] == "commit", audit
+    assert audit["is_pinned"] is True, audit
+    assert audit["spedas_mcp_extras"] == ["analysis"], audit
+    assert audit["analysis_extra_enabled"] is True, audit
+    print("PASS: dependency audit handles direct-ref extras with SSH userinfo and final ref")
 
 
 def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:

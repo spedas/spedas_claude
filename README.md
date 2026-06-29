@@ -15,25 +15,27 @@ Claude Code -> spedas_claude plugin -> spedas MCP server -> CDAWeb / PDS / SPICE
 This plugin touches **two layers that are installed and run differently**. Keeping
 them straight avoids the most common "is this a plugin bug?" confusion.
 
-| | MCP tool layer (this plugin wires it up) | PySPEDAS layer (you manage it) |
+| | MCP tool layer (this plugin wires it up) | Local PySPEDAS layer (you manage it) |
 |---|---|---|
-| What it is | The `spedas` MCP server's tools (`spedas_overview`, `browse_data_sources`, `get_ephemeris`, …) | The [PySPEDAS](https://github.com/spedas/pyspedas) Python package + `pytplot` |
-| Who installs it | `uvx` resolves `spedas_mcp` automatically on first run (see `.mcp.json`) | **You**, in your own Python environment (`pip install pyspedas`) |
-| Where it runs | A subprocess Claude Code starts; Claude calls it as MCP tools | Your local Python interpreter / notebook / script — **not** inside this plugin |
-| What this repo provides | The MCP wiring, the workflow skill, and the slash commands | Only *recipes* and *patterns*; **no** PySPEDAS install |
+| What it is | The `spedas` MCP server's tools (`spedas_overview`, `browse_data_sources`, `get_ephemeris`, analysis/plotting tools, …) | Your own [PySPEDAS](https://github.com/spedas/pyspedas) Python package + `pytplot` environment for notebooks/scripts |
+| Who installs it | `uvx` resolves `spedas-mcp[analysis]` automatically on first run (see `.mcp.json`); this installs PySPEDAS/matplotlib **inside the MCP server subprocess** | **You**, in your own Python environment (`pip install pyspedas`) if you want to run standalone recipes |
+| Where it runs | A subprocess Claude Code starts; Claude calls it as MCP tools | Your local Python interpreter / notebook / script — **not** the plugin subprocess |
+| What this repo provides | The MCP wiring, the workflow skill, and the slash commands | Recipes and patterns for when you intentionally leave the MCP tool layer |
 
-**The plugin does not install PySPEDAS or `pytplot`, and Claude's tool runtime does
-not provide them.** The PySPEDAS code blocks in the skill and in
+`.mcp.json` now requests the server's **`[analysis]` extra** so first-time Claude
+Code users do not see advertised analysis tools fail immediately with
+`dependency_missing` for `pyspedas`/`matplotlib` (issue #49). That installation is
+scoped to the MCP subprocess that `uvx` creates. The PySPEDAS code blocks in the
+skill and in
 [`reference/pyspedas-patterns.md`](skills/spedas-workflow/reference/pyspedas-patterns.md)
-are recipes you run in *your own* Python environment. If you run them somewhere
-without PySPEDAS installed you will get `ModuleNotFoundError: No module named
-'pyspedas'` — that is an environment-scoping gap, not a plugin defect. Install it
-with `pip install pyspedas` (or `uv pip install pyspedas`) in the environment
-where you intend to run those recipes.
+are still recipes you run in *your own* Python environment when you want notebooks
+or standalone scripts; install PySPEDAS there separately. HAPI/FDSN backends remain
+optional heavier extras upstream, so their tools may still report structured
+availability/dependency guidance unless you explicitly enable those stacks.
 
 Most of this plugin's value is in the **MCP tool layer**, which needs no Python
-environment of your own beyond `uvx`. Reach for the PySPEDAS layer only when you
-explicitly want local Python/tplot workflows.
+environment of your own beyond `uvx`. Reach for the local PySPEDAS layer only when
+you explicitly want local Python/tplot workflows.
 
 ## What this repo provides
 
@@ -55,8 +57,9 @@ explicitly want local Python/tplot workflows.
   question → function → MCP tool chain), `mission-loaders.md` (mission/instrument →
   dataset-ID cheatsheet), and canonical event workflows (`mms-magnetopause-`,
   `themis-substorm-`, `rbsp-radiation-belt-workflow.md`). The analysis/plotting MCP
-  tools these reference are **proposed** on `spedas_mcp` (#12–#22) and tagged
-  `[proposed]` until released — confirm availability or use the PySPEDAS fallback.
+  tools these reference are available only when the server's optional analysis
+  backend is installed; this plugin requests `spedas-mcp[analysis]` by default, but
+  you should still confirm the live tool list before a workflow.
 
 ## Requirements
 
@@ -66,14 +69,13 @@ explicitly want local Python/tplot workflows.
   that, the resolved environment is cached by `uv`.
 - Python 3.10+ for the validation scripts (the MCP server itself requires 3.10+).
 
-### Optional (only for the PySPEDAS layer)
+### Optional (only for your local PySPEDAS layer)
 
 - [PySPEDAS](https://github.com/spedas/pyspedas) + `pytplot`, installed **by you**
-  in your own Python environment (`pip install pyspedas`). This plugin does **not**
-  install them and the MCP tool layer does **not** need them. See
-  [Architecture: two independent layers](#architecture-two-independent-layers-read-this-first)
-  above — the PySPEDAS recipes in the skill are for *your* local Python, not the
-  plugin's runtime.
+  in your own Python environment (`pip install pyspedas`) when you want notebooks
+  or standalone scripts. The MCP subprocess already installs `spedas-mcp[analysis]`
+  for Claude-callable analysis tools; that does not modify your own Python env.
+  See [Architecture: two independent layers](#architecture-two-independent-layers-read-this-first).
 
 ### Where the rest is documented
 
@@ -137,28 +139,33 @@ the MCP requirement and whether it is upper-bounded — an audit trail you can
 record in release/methods notes — plus a `cache_diagnostics` object reporting the
 resolved cache paths and their writability for the smoke subprocess.
 
-Expected success (`ok: true`, `tool_count: 17` against the pinned commit, empty
-`missing_core_tools`, empty `missing_groups`):
+Expected success (`ok: true`, no missing required primary tools/groups). At the
+current pin the `[analysis]` extra raises the live surface to 30 tools (17 primary
+base tools plus analysis-enabled advanced tools):
 
 ```json
 {
   "ok": true,
-  "tool_count": 17,
+  "tool_count": 30,
   "missing_core_tools": [],
   "missing_groups": [],
   "dependency_audit": {
+    "from_arg": "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
     "resolved_spedas_mcp_commit": "5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
-    "mcp_has_upper_bound": true
+    "mcp_has_upper_bound": true,
+    "spedas_mcp_extras": ["analysis"],
+    "analysis_extra_enabled": true
   },
   ...
 }
 ```
 
-The exact `tool_count` is fixed by the pinned `spedas_mcp` commit; if you bump the
-pin, re-run the smoke and update this number (see [`COMPATIBILITY.md`](COMPATIBILITY.md)).
+The exact `tool_count` is fixed by the pinned `spedas_mcp` commit **and** requested
+extras; if you bump either, re-run the smoke and update this number (see
+[`COMPATIBILITY.md`](COMPATIBILITY.md)).
 
 Pass `--skip-group-check` to verify only the core tools (e.g. while a backend is
 mid-migration). For copy-ready tool arguments and return shapes, see the skill
@@ -234,7 +241,7 @@ the plugin root is a hard error.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+         "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
          "spedas-mcp"]
 ```
 
@@ -274,7 +281,8 @@ CI (`.github/workflows/validate.yml`) runs all three.
 |---|---|---|
 | `validate_plugin.py` reports a declared path does not resolve | a resource was moved/renamed but `.claude-plugin/plugin.json` still points at the old path, or the path was written relative to `.claude-plugin/` | move the resource to the plugin root, or correct the path key (paths are plugin-root-relative) |
 | `validate_plugin.py`: `spedas server must install from github.com/spedas/spedas_mcp` | `.mcp.json` points at a fork/wrong repo | restore the official `--from` URL |
-| `smoke_mcp_runtime.py` hangs or times out on first run | `uvx` is resolving `spedas_mcp` from GitHub with no/blocked network | ensure network access for the first run; raise `--timeout`; pre-warm with `uvx --from git+https://github.com/spedas/spedas_mcp.git spedas-mcp --help` |
+| `smoke_mcp_runtime.py` hangs or times out on first run | `uvx` is resolving `spedas-mcp[analysis]` from GitHub with no/blocked network | ensure network access for the first run; raise `--timeout`; pre-warm with `uvx --from "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3" spedas-mcp --help` |
+| Analysis tools return `dependency_missing` for `pyspedas`/`matplotlib` | `.mcp.json` lost the `spedas-mcp[analysis] @ ...` source spec, or an old plugin copy is enabled | restore the shipped `.mcp.json` and run `python scripts/validate_plugin.py` (issue #49 guard) |
 | `smoke_mcp_runtime.py`: `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide: https://docs.astral.sh/uv/getting-started/installation/ |
 | `missing_core_tools` non-empty | the resolved `spedas_mcp` version changed its tool surface | confirm the `spedas_mcp` HEAD; pin a known-good ref (see dependencies doc) |
 | Claude Code does not see the slash commands/skill | plugin dir not enabled, or resources not at the plugin root | re-enable the plugin dir; run `validate_plugin.py` to confirm layout |

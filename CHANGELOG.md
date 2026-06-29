@@ -24,7 +24,7 @@ from `.mcp.json`.
 | spedas-claude | spedas_mcp source | MCP protocol range |
 |---|---|---|
 | 0.1.0 | `git+https://github.com/spedas/spedas_mcp.git` (unpinned HEAD) | `mcp>=1.26.0` |
-| Unreleased | `git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (pinned commit) | `mcp>=1.26.0,<2` |
+| Unreleased | `spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (pinned commit + analysis extra) | `mcp>=1.26.0,<2` |
 
 > The `[Unreleased]` features below are already committed to `main` but **no version
 > boundary has been cut**: `.claude-plugin/plugin.json` still reads `0.1.0` and no git
@@ -37,8 +37,10 @@ from `.mcp.json`.
 > **Stability note:** `spedas_mcp` is now resolved from a **pinned commit**
 > (`5ac9e20…`), so the tool surface is stable per install and CI can later cache
 > the dependency stack keyed on the resolved set. The pinned commit exposes
-> **17 base tools** (verified by `scripts/smoke_mcp_runtime.py`). Treat the tool names
-> and signatures as fixed at this pin; they only change when the pin is bumped.
+> **17 primary/base tools** plus analysis-enabled advanced tools from the requested `[analysis]` extra
+> (`tool_count: 30`, verified by `scripts/smoke_mcp_runtime.py`). Treat the required
+> primary tool names/signatures as fixed at this pin; they only change when the pin
+> or requested extras are deliberately changed.
 
 ## [Unreleased]
 
@@ -46,6 +48,14 @@ from `.mcp.json`.
 > release boundary is **deliberately deferred**: the version string stays `0.1.0`
 > and no tag is cut until maintainers choose a boundary (see *Deferred*). Installing
 > from `main` gets you everything below at version `0.1.0`.
+
+### Fixed
+- Install the upstream server's `analysis` extra by default (issue #49): `.mcp.json`
+  now uses `spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@...`
+  so Claude-callable analysis/plotting tools have their PySPEDAS/matplotlib backend
+  in the MCP subprocess instead of failing first-use with `dependency_missing`. The
+  validator now fails if the default source loses `[analysis]`, and the smoke audit
+  reports requested extras. HAPI/FDSN heavyweight extras remain opt-in upstream.
 
 ### Added
 - Reproducible dependency pinning (Batch S, #3): `.mcp.json` now pins `spedas_mcp`
@@ -72,9 +82,9 @@ from `.mcp.json`.
   - Canonical event workflows
     `skills/spedas-workflow/reference/{mms-magnetopause,themis-substorm,rbsp-radiation-belt}-workflow.md`
     — plan → fetch → analyze → plot with sanity checks (#44).
-  - The analysis/transformation/plotting MCP tools these reference are **proposed** on
-    `spedas_mcp` (#12–#22) and tagged `[proposed]`; the docs give PySPEDAS fallbacks and
-    do not claim unreleased tools are available.
+  - The analysis/transformation/plotting MCP tools these reference target the
+    server's optional `[analysis]` surface when present; the docs keep PySPEDAS
+    fallbacks and still tell users to confirm the live tool list before a workflow.
 - Repository governance scaffolding: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`,
   `SECURITY.md`, GitHub issue/PR templates, and this changelog (#19).
 - `maintainer` contact in `.claude-plugin/plugin.json` (#19).
