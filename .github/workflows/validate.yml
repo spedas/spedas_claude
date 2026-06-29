@@ -39,14 +39,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Validate plugin wrapper (offline packaging)
+      - name: Validate Agent Kit module index (offline packaging)
+        run: python scripts/validate_agent_kit.py
+      - name: Validate Claude Code module (offline packaging)
         run: python scripts/validate_plugin.py
       - name: Validator self-tests (negative cases)
         run: python scripts/test_validate_plugin.py
       - name: Fetch/kernel guard self-tests (offline)
         run: python scripts/test_fetch_guard.py
+      - name: Validate Codex module (offline packaging)
+        run: python plugins/codex/scripts/validate_plugin.py
       - name: Smoke tool-group self-tests (offline)
         run: python scripts/test_smoke_groups.py
+      - name: Codex smoke tool-group self-tests (offline)
+        run: python plugins/codex/scripts/test_smoke_groups.py
+      - name: Codex cache-path portability self-tests (offline)
+        run: python plugins/codex/scripts/test_cache_paths.py
       # Issue #5: cross-platform cache-path portability. The pure self-tests
       # simulate POSIX/macOS/native-Windows env from any host, and the offline
       # --cache-diagnostics check proves how the packaged ${HOME}/.cache/... values

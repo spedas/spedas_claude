@@ -64,6 +64,11 @@ from `.mcp.json`.
   reports requested extras. HAPI/FDSN heavyweight extras remain opt-in upstream.
 
 ### Added
+- Introduce the SPEDAS Agent Kit umbrella identity and module index with the first
+  two runtime modules: Claude Code at the repository root for backward-compatible
+  installs, and Codex under `plugins/codex/` imported from `spedas/spedas_codex`.
+- Add `scripts/validate_agent_kit.py` and CI coverage for the Agent Kit module
+  index plus the nested Codex module validator.
 - Reproducible dependency pinning (Batch S, #3): `.mcp.json` now pins `spedas_mcp`
   to commit `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` and bounds the MCP range to
   `mcp>=1.26.0,<2`. New root [`COMPATIBILITY.md`](COMPATIBILITY.md) records the

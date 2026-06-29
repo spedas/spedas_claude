@@ -1,14 +1,32 @@
-# SPEDAS Claude Code plugin
+# SPEDAS Agent Kit
 
-`spedas_claude` is a standalone Claude Code plugin wrapper for the official
-[SPEDAS MCP](https://github.com/spedas/spedas_mcp). It does not duplicate the
-science tooling. Instead, it packages the MCP connection, a Claude-facing
-workflow skill, and slash-command style prompts so Claude Code can use SPEDAS as
-a heliophysics research assistant.
+SPEDAS Agent Kit packages the official
+[`spedas_mcp`](https://github.com/spedas/spedas_mcp) server with runtime-specific
+plugin modules: skills, commands/instructions, safety hooks, examples, provenance
+patterns, and CI smoke checks for heliophysics research agents. It does not
+duplicate the science tooling; it turns the shared SPEDAS MCP core into usable
+agent/plugin skeletons.
 
 ```text
-Claude Code -> spedas_claude plugin -> spedas MCP server -> CDAWeb / PDS / SPICE backends
+research agent -> SPEDAS Agent Kit runtime module -> spedas MCP server -> CDAWeb / PDS / SPICE backends
 ```
+
+The Claude Code module remains at the repository root for backward-compatible
+installs. The Codex module is now included under `plugins/codex/` as the second
+runtime module.
+
+## Runtime modules
+
+The machine-readable module index is [`agent-kit.json`](agent-kit.json). The first
+two implemented modules are:
+
+| Module | Runtime | Location | Validation |
+| --- | --- | --- | --- |
+| SPEDAS Agent Kit for Claude Code | Claude Code plugin | repository root (`.`), with notes in [`plugins/claude-code/`](plugins/claude-code/) | `python scripts/validate_plugin.py` and runtime smoke |
+| SPEDAS Agent Kit for Codex | Codex plugin | [`plugins/codex/`](plugins/codex/) | `python plugins/codex/scripts/validate_plugin.py` |
+
+OpenCode is the next planned runtime module; it is intentionally not implemented
+in this first structural rename PR.
 
 ## Architecture: two independent layers (read this first)
 
@@ -101,12 +119,14 @@ cd spedas_claude
 ### 2. Validate the packaging (offline, no network)
 
 ```bash
+python scripts/validate_agent_kit.py
 python scripts/validate_plugin.py
 ```
 
 Expected success output:
 
 ```text
+SPEDAS Agent Kit module validation OK
 SPEDAS Claude plugin wrapper validation OK
   manifest: .claude-plugin/plugin.json
   skills:   skills
@@ -268,10 +288,14 @@ and [`docs/dependencies.md`](docs/dependencies.md) for the narrative companion.
 ## Local validation (summary)
 
 ```bash
-python scripts/validate_plugin.py        # offline packaging validation
+python scripts/validate_agent_kit.py      # Agent Kit module index validation
+python scripts/validate_plugin.py        # Claude Code module packaging validation
+python plugins/codex/scripts/validate_plugin.py  # Codex module packaging validation
 python scripts/test_validate_plugin.py   # validator self-tests (negative cases)
 python scripts/test_fetch_guard.py       # default PreToolUse guard self-tests
 python scripts/test_smoke_groups.py      # offline tool-group check self-tests
+python plugins/codex/scripts/test_smoke_groups.py  # Codex offline tool-group checks
+python plugins/codex/scripts/test_cache_paths.py   # Codex cache-path checks
 python scripts/smoke_mcp_runtime.py --json  # real MCP runtime smoke (needs uvx + first-run network)
 ```
 
