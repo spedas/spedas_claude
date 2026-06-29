@@ -50,6 +50,12 @@ from `.mcp.json`.
 > from `main` gets you everything below at version `0.1.0`.
 
 ### Fixed
+- Enable the default fetch/kernel `PreToolUse` safety gate (issue #6):
+  `hooks/hooks.json` now asks Claude Code for explicit permission before real
+  archive downloads or `allow_kernel_download: true` geometry/SPICE calls proceed.
+  The guard warns on wide time ranges, nudges source-specific fetches toward the
+  unified `fetch_data_product` workflow, and is covered by `scripts/test_fetch_guard.py`
+  plus validator checks that fail if the hook goes empty or drops a guarded tool.
 - Install the upstream server's `analysis` extra by default (issue #49): `.mcp.json`
   now uses `spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@...`
   so Claude-callable analysis/plotting tools have their PySPEDAS/matplotlib backend

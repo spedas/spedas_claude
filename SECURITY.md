@@ -15,7 +15,7 @@ reproducible or audited deployment, follow the procedure in
 ## What belongs here vs. upstream
 
 - **This repo (`spedas_claude`)** — issues in the plugin wrapper: the MCP wiring
-  in `.mcp.json`, the opt-in hook examples under `hooks/`, the validators and
+  in `.mcp.json`, the default fetch/kernel guard under `hooks/`, the validators and
   smoke scripts, cache-path handling, or anything that could cause the plugin to
   fetch/run unintended code.
 - **[spedas/spedas_mcp](https://github.com/spedas/spedas_mcp)** — vulnerabilities
@@ -48,10 +48,10 @@ version and the `spedas_mcp` compatibility note.
 
 ## Scope notes
 
-- The shipped `hooks/hooks.json` is an intentional **empty placeholder**; the
-  fetch-guard under `hooks/examples/` is opt-in and disabled by default. A
-  report that the plugin "runs a hook by default" should first confirm the
-  hook was explicitly enabled.
+- The shipped `hooks/hooks.json` includes an enabled-by-default `PreToolUse`
+  fetch/kernel guard. It is intended to ask for permission before real archive
+  downloads or large SPICE kernel downloads; reports should include the hook
+  event JSON, tool name, and whether the guard asked, stayed quiet, or failed.
 - Cache directories are configurable via the environment variables documented in
   [docs/configuration.md](docs/configuration.md); reports about cache location
   should account for that.

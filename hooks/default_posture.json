@@ -1,13 +1,23 @@
 {
-  "$comment": "Sidecar contract (NOT a Claude Code hook file). It records that hooks/hooks.json ships intentionally empty. Kept separate from hooks/hooks.json so the Claude plugin hook schema stays minimal/unpolluted. The validator (scripts/validate_plugin.py) asserts this file exists and is consistent whenever hooks/hooks.json is the empty placeholder, so an empty array can never be silently read as a regression. See issue #6.",
-  "spedas_default_hook_posture": "deferred",
+  "spedas_default_hook_posture": "enabled",
   "issue": "https://github.com/spedas/spedas_claude/issues/6",
-  "rationale": "Enabled-by-default PreToolUse gates change the user's runtime behavior (blocking/rewriting tool calls). This plugin must not mutate that behavior without an explicit opt-in, so no default state-mutating hook is shipped. The metadata-first / plan-before-fetch discipline is enforced through prose (skill + commands), per-CLI --allowedTools scoping, and the docs below. A stronger enabled-by-default gate remains a maintainer/product decision; issue #6 stays open for it.",
-  "expected_hooks_json": { "hooks": [] },
-  "opt_in_example": "hooks/examples/pretooluse-fetch-guard.md",
-  "opt_in_guard_script": "hooks/examples/fetch_guard.py",
+  "intent": "Ship a default PreToolUse safety gate for real SPEDAS data downloads and large SPICE kernel downloads. The gate asks Claude Code for explicit permission before risky calls proceed, keeping metadata/planning tools frictionless.",
+  "guard_script": "hooks/fetch_guard.py",
+  "guard_test": "scripts/test_fetch_guard.py",
   "docs": [
     "hooks/README.md",
-    "docs/safety.md"
+    "docs/safety.md",
+    "README.md"
+  ],
+  "matched_tools": [
+    "mcp__spedas__fetch_data_product",
+    "mcp__spedas__fetch_hapi_data",
+    "mcp__spedas__fetch_fdsn_data",
+    "mcp__spedas__fetch_data",
+    "mcp__spedas__fetch_pds_data",
+    "mcp__spedas__manage_spice_kernels",
+    "mcp__spedas__get_ephemeris",
+    "mcp__spedas__compute_distance",
+    "mcp__spedas__transform_coordinates"
   ]
 }
