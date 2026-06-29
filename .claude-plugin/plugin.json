@@ -1,7 +1,7 @@
 {
   "name": "spedas-claude",
   "version": "0.1.0",
-  "description": "Claude Code plugin wrapper for the official SPEDAS MCP heliophysics tools.",
+  "description": "Claude Code runtime module for the SPEDAS Agent Kit, backed by the official SPEDAS MCP heliophysics tools.",
   "author": {
     "name": "SPEDAS",
     "url": "https://github.com/spedas"
@@ -14,7 +14,17 @@
   "homepage": "https://github.com/spedas/spedas_claude",
   "repository": "https://github.com/spedas/spedas_claude",
   "license": "MIT",
-  "keywords": ["spedas", "heliophysics", "mcp", "cdaweb", "pds", "spice", "space-physics"],
+  "keywords": [
+    "spedas",
+    "heliophysics",
+    "mcp",
+    "cdaweb",
+    "pds",
+    "spice",
+    "space-physics",
+    "agent-kit",
+    "claude-code"
+  ],
   "mcpServers": "./.mcp.json",
   "skills": "./skills",
   "commands": "./commands",

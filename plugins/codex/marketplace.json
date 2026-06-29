@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "spedas-codex",
+      "path": ".",
+      "description": "Codex wrapper for the official SPEDAS MCP."
+    }
+  ]
+}
