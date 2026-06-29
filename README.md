@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
         "spedas-agent-kit"
       ]
     }
@@ -48,13 +48,23 @@ The shared MCP server, tool implementations, and canonical shared skills live in
 }
 ```
 
-The default base surface is intentionally compact: 17 tools covering overview,
-planning, unified data-source routing, geometry/SPICE basics, HAPI, and FDSN
-entrypoints. Optional Agent Kit extras such as `analysis`, `hapi`, and `fdsn` are
-owned by the core package; this wrapper does not request them by default. If a
-workflow needs optional analysis tools, first change the Agent Kit source in
-`.mcp.json` deliberately (for example to a reviewed `spedas-agent-kit[analysis] @
-git+...@<sha>` direct reference) and rerun the validator/smoke.
+The default base surface is intentionally compact: **13 tools** covering
+overview, planning, unified data-source routing, and geometry/SPICE basics. The
+Agent Kit tool surface is **tiered**, and the rest are gated off by default:
+
+- **+13 analysis tools** (timeseries/coordinate transforms, spectra, particle
+  moments/distributions, `render_tplot`, …) register only when the
+  `spedas-agent-kit[analysis]` extra is installed.
+- **+4 HAPI/FDSN datasource tools** stay hidden from `tools/list` unless
+  `SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1` is set.
+- **+8 legacy CDAWeb/PDS compat tools** stay hidden unless
+  `SPEDAS_AGENT_KIT_COMPAT_TOOLS=1` is set.
+
+This wrapper does not request any extra or set any gate flag by default. If a
+workflow needs optional tools, change the Agent Kit source/env in `.mcp.json`
+deliberately (for example a reviewed `spedas-agent-kit[analysis] @ git+...@<sha>`
+direct reference, or a gate flag in the server `env`) and rerun the
+validator/smoke.
 
 ## Requirements
 
@@ -82,12 +92,17 @@ Expected runtime-smoke evidence at the current pin:
 ```json
 {
   "ok": true,
-  "tool_count": 17,
-  "missing_core_tools": [],
+  "tool_count": 13,
+  "missing_base_tools": [],
   "missing_groups": [],
+  "optional_tiers": {
+    "analysis": { "status": "absent", "unlock": "install spedas-agent-kit[analysis]" },
+    "datasource": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1" },
+    "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
+  },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
-    "resolved_spedas_agent_kit_commit": "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
+    "resolved_spedas_agent_kit_commit": "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",

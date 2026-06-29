@@ -16,22 +16,29 @@ This repository is a thin Claude Code wrapper around the official
 
 | spedas-claude | Agent Kit source | MCP protocol range |
 |---|---|---|
-| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7` (pinned commit, base extras) | `mcp>=1.26.0,<2` |
+| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` (pinned commit, no extras) | `mcp>=1.26.0,<2` |
 
-The current pin exposes the 17-tool base Agent Kit surface. Optional Agent Kit
-extras such as `analysis`, `hapi`, and `fdsn` are deliberate opt-ins rather than
-this wrapper's default.
+The current pin exposes the **13-tool base** Agent Kit surface. The tool surface
+is tiered: optional **analysis** tools (`spedas-agent-kit[analysis]` extra),
+**HAPI/FDSN datasource** tools (`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`), and legacy
+**CDAWeb/PDS compat** tools (`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`) are gated opt-ins
+rather than this wrapper's default.
 
 ## [Unreleased]
 
 ### Changed
 - Point the Claude Code wrapper at the renamed `spedas_agent_kit` core repo and
-  `spedas-agent-kit` command, pinned to `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`.
+  `spedas-agent-kit` command, repinned to the current Agent Kit main
+  `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` (was the rename commit
+  `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`).
 - Reframe this repository as a Claude-only thin wrapper. The Agent Kit core owns
   the MCP server, implementation, and canonical shared skills; Codex lives in the
   separate `spedas_codex` wrapper repository.
-- Keep the runtime smoke on the compact 17-tool base Agent Kit surface. Optional
-  analysis/HAPI/FDSN extras remain core-package opt-ins.
+- Rebuild the runtime smoke around the Agent Kit's current **tiered** surface:
+  assert the **13-tool base** default surface, and report (never require) the
+  gated analysis / HAPI-FDSN datasource / CDAWeb-PDS compat tiers. The previous
+  flat 17-tool expectation (which counted HAPI/FDSN as core) is removed because
+  #87/#145 demoted those to a gated datasource tier.
 
 ### Removed
 - Remove the interim multi-runtime `agent-kit.json` module index, nested

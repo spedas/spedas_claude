@@ -23,12 +23,16 @@ python3 scripts/smoke_mcp_runtime.py --json --timeout 240
 
 Expected: validation exits 0, the negative-case validator tests pass, the offline
 tool-group self-tests pass, and the runtime smoke returns JSON with `ok: true`,
-`tool_count: 17` (against the pinned `spedas_agent_kit` commit), no missing core tools,
-and `missing_groups: []`. The runtime
-smoke starts the same `uvx ... spedas-agent-kit` command declared in `.mcp.json` and
-performs MCP initialize + tools/list — verifying the workflow, unified-data,
-geometry/SPICE, and CDAWeb/PDS backend tool groups are all present — without
-fetching mission data or downloading SPICE kernels.
+`tool_count: 13` (the base surface against the pinned `spedas_agent_kit` commit),
+no missing base tools, and `missing_groups: []`. Every entry under
+`optional_tiers` reports `"status": "absent"` because this wrapper unlocks no
+optional tier by default. The runtime smoke starts the same
+`uvx ... spedas-agent-kit` command declared in `.mcp.json` and performs MCP
+initialize + tools/list — verifying the workflow, unified-data, and
+geometry/SPICE base tool groups are all present — without fetching mission data
+or downloading SPICE kernels. (The HAPI/FDSN datasource tools and the legacy
+CDAWeb/PDS compat tools are gated off by default and are reported as optional
+tiers, not base groups.)
 
 For concrete per-tool arguments and return shapes, see
 [`tool-examples.md`](tool-examples.md),

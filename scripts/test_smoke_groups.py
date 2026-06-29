@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Network-free tests for the runtime smoke's tool-group check (issues #8/#115).
 
-These do NOT start the MCP server. They import the pure ``_check_groups`` helper
-from ``smoke_mcp_runtime`` and assert that the current 17-tool
-base surface is grouped correctly, so CI catches a dropped family (for example
-all SPICE/geometry tools) even if the total tool count still looks plausible. Run with plain ``python scripts/test_smoke_groups.py`` —
-no pytest, no network.
+These do NOT start the MCP server. They import the pure ``_check_groups`` and
+``_check_optional_tiers`` helpers from ``smoke_mcp_runtime`` and assert that the
+current 13-tool base surface is grouped correctly and that the gated optional
+tiers (analysis / datasource / compat) are reported but never required, so CI
+catches a dropped base family (for example all SPICE/geometry tools) even if the
+total tool count still looks plausible. Run with plain
+``python scripts/test_smoke_groups.py`` — no pytest, no network.
 """
 from __future__ import annotations
 
@@ -45,23 +47,51 @@ def test_missing_geometry_group_detected() -> None:
     print("PASS: dropped geometry_spice group is detected")
 
 
-def test_partial_optional_group_detected() -> None:
-    # Remove a single optional-backend entrypoint -> that group must report it missing.
-    dropped = smoke.TOOL_GROUPS["optional_hapi"][0]
-    tools = [t for t in _all_tools() if t != dropped]
-    report = smoke._check_groups(tools)
-    assert not report["optional_hapi"]["ok"], "a missing optional backend tool must flag its group"
-    assert report["optional_hapi"]["missing"] == [dropped]
-    print(f"PASS: partially-missing optional_hapi detected (dropped {dropped!r})")
+def test_optional_tiers_absent_on_base_surface() -> None:
+    # The default wrapper ships the base surface only: HAPI/FDSN, analysis, and
+    # legacy CDAWeb/PDS compat tools are gated off, so every optional tier must
+    # report ``absent`` and none of them may appear in the base groups.
+    base = _all_tools()
+    tiers = smoke._check_optional_tiers(base)
+    assert set(tiers) == set(smoke.OPTIONAL_TIERS), "report must cover every optional tier"
+    for name, info in tiers.items():
+        assert info["status"] == "absent", f"tier {name} must be absent on base surface: {info}"
+        assert info["present"] == [], f"tier {name} must contribute no base tools"
+    # The base groups must not accidentally re-list any gated tool.
+    grouped = set(base)
+    for tier, spec in smoke.OPTIONAL_TIERS.items():
+        for tool in spec["tools"]:
+            assert tool not in grouped, f"gated {tier} tool {tool!r} leaked into base TOOL_GROUPS"
+    print("PASS: optional tiers are absent from the base surface")
 
 
-def test_core_tools_are_subset_of_groups() -> None:
-    # The legacy EXPECTED_CORE_TOOLS must all live in the workflow/unified groups,
-    # so the two checks stay consistent.
+def test_optional_tier_detected_when_unlocked() -> None:
+    # When a deployment installs an extra / sets a gate flag, the corresponding
+    # tier must be reported ``enabled`` (informational only; never gates ``ok``).
+    base = _all_tools()
+    analysis_tools = smoke.OPTIONAL_TIERS["analysis"]["tools"]
+    tiers = smoke._check_optional_tiers(base + analysis_tools)
+    assert tiers["analysis"]["status"] == "enabled", tiers["analysis"]
+    assert tiers["datasource"]["status"] == "absent", tiers["datasource"]
+    # A single advertised datasource tool -> partial.
+    one = smoke.OPTIONAL_TIERS["datasource"]["tools"][:1]
+    partial = smoke._check_optional_tiers(base + one)
+    assert partial["datasource"]["status"] == "partial", partial["datasource"]
+    print("PASS: unlocked optional tier reported enabled/partial")
+
+
+def test_base_tools_are_subset_of_groups() -> None:
+    # Every base tool must live in one of the base TOOL_GROUPS so the core-tool
+    # check and the group check stay consistent.
     grouped = set(_all_tools())
-    for name in smoke.EXPECTED_CORE_TOOLS:
-        assert name in grouped, f"core tool {name!r} missing from TOOL_GROUPS"
-    print("PASS: EXPECTED_CORE_TOOLS are all covered by TOOL_GROUPS")
+    for name in smoke.BASE_EXPECTED_TOOLS:
+        assert name in grouped, f"base tool {name!r} missing from TOOL_GROUPS"
+    # The total base surface is exactly the 13 grouped tools.
+    assert len(grouped) == len(smoke.BASE_EXPECTED_TOOLS) == 13, (
+        f"base surface must be 13 tools, got {len(grouped)} grouped / "
+        f"{len(smoke.BASE_EXPECTED_TOOLS)} expected"
+    )
+    print("PASS: BASE_EXPECTED_TOOLS are all covered by TOOL_GROUPS (13 tools)")
 
 
 def test_initialize_params_no_hardcoded_protocol() -> None:
@@ -182,17 +212,17 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
             "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["is_spedas_agent_kit_source"], audit
     assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_agent_kit.git", audit
-    assert audit["pinned_ref"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
+    assert audit["pinned_ref"] == "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["resolved_spedas_agent_kit_commit"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
+    assert audit["resolved_spedas_agent_kit_commit"] == "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40", audit
     assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
     assert audit["mcp_has_upper_bound"] is True, audit
     assert audit["spedas_agent_kit_extras"] == [], audit
@@ -245,13 +275,13 @@ def test_dependency_audit_direct_ref_with_ssh_userinfo_and_ref() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
             "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_agent_kit.git", audit
-    assert audit["pinned_ref"] == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7", audit
+    assert audit["pinned_ref"] == "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
     assert audit["spedas_agent_kit_extras"] == [], audit
@@ -281,8 +311,9 @@ def test_dependency_audit_tag_ref_is_pinned_not_commit() -> None:
 def main() -> int:
     test_all_groups_present()
     test_missing_geometry_group_detected()
-    test_partial_optional_group_detected()
-    test_core_tools_are_subset_of_groups()
+    test_optional_tiers_absent_on_base_surface()
+    test_optional_tier_detected_when_unlocked()
+    test_base_tools_are_subset_of_groups()
     test_initialize_params_no_hardcoded_protocol()
     test_protocol_version_env_override()
     test_protocol_version_fallback_when_mcp_unavailable()
