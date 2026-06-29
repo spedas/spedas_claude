@@ -13,7 +13,7 @@ for reproducibility.
     "spedas": {
       "command": "uvx",
       "args": ["--with", "mcp>=1.26.0,<2",
-               "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+               "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
                "spedas-agent-kit"]
     }
   }
@@ -23,25 +23,29 @@ for reproducibility.
 | Field | Value |
 |---|---|
 | Source repo | `https://github.com/spedas/spedas_agent_kit.git` |
-| Ref | `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7` |
+| Ref | `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` |
 | Package / console script | `spedas-agent-kit` |
 | Requested extras | none by default |
 | MCP protocol dep | `mcp>=1.26.0,<2` |
 
-The base pin exposes the current 17-tool Agent Kit surface. Optional extras such
-as `analysis`, `hapi`, and `fdsn` are core-package opt-ins; request them only as a
-reviewed change to `.mcp.json` and then update this document and smoke evidence.
+The base pin exposes the current **13-tool base** Agent Kit surface. The surface
+is tiered: optional **analysis** tools (`spedas-agent-kit[analysis]` extra), the
+**HAPI/FDSN datasource** tools (`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`), and legacy
+**CDAWeb/PDS compat** tools (`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`) are gated off by
+default. Unlock a tier only as a reviewed change to `.mcp.json` and then update
+this document and the smoke evidence.
 
 ## Verify
 
 ```bash
 python scripts/validate_plugin.py
 python scripts/smoke_mcp_runtime.py --json --timeout 300
-gh api repos/spedas/spedas_agent_kit/commits/52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7 >/dev/null
+gh api repos/spedas/spedas_agent_kit/commits/e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40 >/dev/null
 ```
 
-The smoke should report `ok: true`, `tool_count: 17`, empty missing lists, and a
-dependency audit with `resolved_spedas_agent_kit_commit` equal to the SHA above.
+The smoke should report `ok: true`, `tool_count: 13`, empty missing lists, every
+`optional_tiers` entry `"status": "absent"`, and a dependency audit with
+`resolved_spedas_agent_kit_commit` equal to the SHA above.
 
 ## Bump
 

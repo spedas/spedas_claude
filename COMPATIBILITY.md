@@ -10,8 +10,8 @@ the Agent Kit commit, and the MCP protocol range.
 | Component | Pinned value | Source of truth |
 |---|---|---|
 | `spedas-claude` wrapper | `0.1.0` on `main` (no release tag cut yet) | `.claude-plugin/plugin.json` |
-| `spedas_agent_kit` commit | `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7` |
-| Default Agent Kit extras | none | base 17-tool surface; optional extras are deliberate opt-ins |
+| `spedas_agent_kit` commit | `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40` |
+| Default Agent Kit extras | none | base 13-tool surface; analysis/datasource/compat tiers are gated opt-ins |
 | MCP protocol range | `mcp>=1.26.0,<2` | `.mcp.json` `--with` |
 
 `.mcp.json` launches:
@@ -19,9 +19,15 @@ the Agent Kit commit, and the MCP protocol range.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7",
+         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
          "spedas-agent-kit"]
 ```
+
+The Agent Kit tool surface is tiered. The base/default surface is **13 tools**.
+Optional tiers are gated and off by default in this wrapper: **+13 analysis**
+tools (requires the `spedas-agent-kit[analysis]` extra), **+4 HAPI/FDSN**
+datasource tools (`SPEDAS_AGENT_KIT_DATASOURCE_TOOLS=1`), and **+8 legacy
+CDAWeb/PDS compat** tools (`SPEDAS_AGENT_KIT_COMPAT_TOOLS=1`).
 
 The source is pinned to a full 40-character commit SHA. The MCP dependency has an
 upper bound so a future breaking `mcp 2.x` is not pulled silently.
@@ -35,19 +41,21 @@ python scripts/smoke_mcp_runtime.py --json --timeout 300
 
 In the smoke JSON, confirm:
 
-- `dependency_audit.resolved_spedas_agent_kit_commit == "52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7"`
+- `dependency_audit.resolved_spedas_agent_kit_commit == "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40"`
 - `dependency_audit.ref_kind == "commit"`
 - `dependency_audit.is_pinned == true`
 - `dependency_audit.mcp_has_upper_bound == true`
 - `dependency_audit.spedas_agent_kit_extras == []`
 - `dependency_audit.analysis_extra_enabled == false`
-- `ok == true`, empty `missing_core_tools`, empty `missing_groups`
-- `tool_count == 17` for the current base surface
+- `ok == true`, empty `missing_base_tools`, empty `missing_groups`
+- `tool_count == 13` for the current base surface
+- every entry under `optional_tiers` reports `"status": "absent"` (this wrapper
+  unlocks no optional tier by default)
 
 To confirm the commit still exists upstream:
 
 ```bash
-gh api repos/spedas/spedas_agent_kit/commits/52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7 >/dev/null
+gh api repos/spedas/spedas_agent_kit/commits/e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40 >/dev/null
 ```
 
 ## Bump procedure

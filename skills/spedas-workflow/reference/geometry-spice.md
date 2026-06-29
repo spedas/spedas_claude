@@ -12,7 +12,7 @@ questions separately from the measurement-data layer. SPICE discovery/cache
 context is routed through the unified data facade, not through legacy hidden
 list/manage tools. Verify the installed surface with
 `python3 scripts/smoke_mcp_runtime.py --json` (this wrapper pins
-`spedas_agent_kit` `52ccfcb0384dd71fa224bdc65ce813d0fa60a5c7`).
+`spedas_agent_kit` `e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40`).
 
 ## Public routing
 
