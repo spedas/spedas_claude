@@ -1,6 +1,6 @@
 # Fetch & kernel safety boundary
 
-This plugin exposes the full SPEDAS MCP tool surface (40 tools at the pinned
+This plugin exposes the full SPEDAS MCP tool surface (17 base tools at the pinned
 `spedas_mcp` commit), including tools that perform **real network downloads**:
 mission data products and SPICE kernels. This document defines the safety
 boundary, the opt-in language to use, and what to do before enabling real
@@ -9,7 +9,7 @@ fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook the
 
 > **Caveat:** the tools and their fetch/kernel behavior live in the upstream
 > `spedas_mcp` server, which `.mcp.json` now resolves from a **pinned commit**
-> (`4afdae39bda2ee11e27606809491b4d642e8ecc9`). The pin makes the tool surface
+> (`5ac9e2087ca7522bff45386c3a8d308e3d9d92b3`). The pin makes the tool surface
 > stable per install; re-verify this boundary whenever you **bump** the pin, since
 > a new commit can alter what counts as a fetch/kernel tool (see
 > [`COMPATIBILITY.md`](../COMPATIBILITY.md) and [`dependencies.md`](dependencies.md)).
@@ -19,9 +19,9 @@ fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook the
 | Always safe (metadata/planning) | Opt-in (network, can be large) |
 |---|---|
 | `spedas_overview`, `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle` | `fetch_data_product` (unified) |
-| `browse_data_sources`, `load_data_source`, `browse_data_parameters` | `fetch_data` (CDAWeb backend) |
-| `list_spice_missions`, `list_coordinate_frames`, `get_ephemeris`, `compute_distance`, `transform_coordinates` (using already-present kernels) | `fetch_pds_data` (PDS backend) |
-| `manage_data_cache(action="status")`, `manage_spice_kernels(action="status")` | `manage_spice_kernels(action="load"/download paths)` — SPICE kernels are often 100 MB–1+ GB each |
+| `browse_data_sources`, `load_data_source`, `browse_data_parameters` | `fetch_data_product` (CDAWeb/PDS unified data fetch) |
+| `get_ephemeris`, `compute_distance`, `transform_coordinates` with cached kernels / confirmation responses | the same geometry tools with `allow_kernel_download=True` — SPICE kernels are often 100 MB–1+ GB each |
+| `manage_data_cache(source_type=..., action="status")` | `fetch_hapi_data`, `fetch_fdsn_data`, or cache cleanup actions such as `manage_data_cache(source_type=..., action="clean")` |
 
 **Default posture:** stay in the left column until the user (or task) explicitly
 authorizes a fetch. CDAWeb/PDS enforce rate limits; a careless wide request (e.g.
@@ -56,7 +56,7 @@ without a fresh confirmation.
    (see [`configuration.md`](configuration.md)). A misconfigured cache means every
    run re-downloads — the fastest way to get rate-limited.
 3. **Estimate size.** For SPICE especially, prefer the smallest kernel set; check
-   `manage_spice_kernels(action="status")` for what is already cached.
+   `manage_data_cache(source_type="spice", action="status")` for what is already cached.
 4. **Get explicit opt-in** using the language above and record it.
 5. **Start a provenance run directory** from [`../templates/provenance/`](../templates/provenance/)
    so the fetch and its outputs are recorded.
@@ -86,7 +86,7 @@ not mutate that behavior without the user opting in. Instead:
 - For users who *want* a runtime gate, a ready-to-enable example hook is provided —
   **disabled by default** — at
   [`../hooks/examples/pretooluse-fetch-guard.md`](../hooks/examples/pretooluse-fetch-guard.md).
-  It matches the fetch/kernel tools and warns before they run. Copy it into
+  It matches the current fetch tools and geometry calls that explicitly opt into kernel downloads, then warns before they run. Copy it into
   `hooks/hooks.json` *only if you want it*; read its caveats first.
 
 If a future version ships an active gate, it must be opt-in (off by default) and

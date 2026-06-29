@@ -29,8 +29,8 @@ Claude Code hook file; it is kept separate so the hook schema stays minimal.
 An **opt-in, disabled-by-default** example is provided:
 
 - [`examples/pretooluse-fetch-guard.md`](examples/pretooluse-fetch-guard.md) —
-  how to enable a `PreToolUse` reminder before the network-download tools
-  (`fetch_data_product`, `fetch_data`, `fetch_pds_data`, `manage_spice_kernels`).
+  how to enable a `PreToolUse` reminder before network-download tools and geometry calls that set `allow_kernel_download=True`
+  (`fetch_data_product`, `fetch_hapi_data`, `fetch_fdsn_data`, `get_ephemeris`, `compute_distance`, `transform_coordinates`).
 - [`examples/fetch_guard.py`](examples/fetch_guard.py) — the companion guard
   script. It is advisory only: it prints a reminder and exits 0, performs no
   network access, and writes no files.

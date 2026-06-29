@@ -34,8 +34,8 @@ Think in four layers:
 - Discovery and mental model: `spedas_overview`.
 - Science planning: `search_spedas_data_sources`, `plan_spedas_observation`, `compare_cdaweb_pds_spice`, `create_spedas_analysis_bundle`.
 - Unified data layer: `browse_data_sources`, `load_data_source`, `browse_data_parameters`, `fetch_data_product`, `manage_data_cache`.
-- Geometry/SPICE: `list_spice_missions`, `list_coordinate_frames`, `get_ephemeris`, `compute_distance`, `transform_coordinates`, `manage_spice_kernels`. Geometry is its own tool family — route SPICE positions/frames here, not through `fetch_data_product`.
-- Treat source-specific CDAWeb/PDS tools (`browse_observatories`, `fetch_data`, `browse_pds_missions`, `fetch_pds_data`, …) as compatibility or maintenance surfaces unless the user asks for low-level backend behavior.
+- Geometry/SPICE: use `get_ephemeris`, `compute_distance`, and `transform_coordinates`; use `browse_data_sources(source_type="spice")` / `manage_data_cache(source_type="spice", action="status")` for discovery and cache context. Geometry is its own workflow — route SPICE positions/frames here, not through `fetch_data_product`.
+- Optional archive-specific tools: `browse_hapi_catalog` / `fetch_hapi_data` and `browse_fdsn_datasets` / `fetch_fdsn_data` are visible but may require server extras; use them only when the science question calls for those archives.
 
 For concrete arguments, return-shape notes, and no-fetch caveats for every tool,
 see `reference/tool-examples.md`, `reference/geometry-spice.md`, and
@@ -84,8 +84,8 @@ and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 ## References in this skill folder
 
 - `reference/tool-examples.md` — concrete arguments, return shapes, and no-fetch caveats for the unified workflow + data tools.
-- `reference/geometry-spice.md` — the six geometry/SPICE tools, safe examples, and the metadata-vs-kernel-download line.
-- `reference/backend-compatibility.md` — unified facade vs. CDAWeb/PDS backend tools, with a name map and decision criteria.
+- `reference/geometry-spice.md` — current geometry/SPICE tools, safe examples, and the metadata-vs-kernel-download line.
+- `reference/backend-compatibility.md` — unified facade, optional backend entrypoints, and when to leave the compact public surface.
 - `reference/mcp-quickstart.md` — Claude plugin smoke, local wrapper validation, and first user checks.
 - `reference/source-selection.md` — choose CDAWeb vs PDS vs SPICE.
 - `reference/pyspedas-patterns.md` — safe PySPEDAS loading/plotting/export patterns.
@@ -100,7 +100,7 @@ and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 
 ## Analysis-layer tool maturity
 
-Beyond the 26 current MCP tools (discovery, planning, fetch, geometry), the
+Beyond the 17 current base MCP tools (discovery, planning, fetch, geometry, optional backend entrypoints), the
 analysis/transformation/plotting layer is **proposed** on `spedas_mcp` (issues
 #12–#22) and may not be released yet. The recipe/workflow references above tag these
 `[proposed: spedas_mcp #NN]`. **Confirm a proposed tool is live** (via
