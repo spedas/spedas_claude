@@ -29,10 +29,23 @@ no missing base tools, and `missing_groups: []`. Every entry under
 optional tier by default. The runtime smoke starts the same
 `uvx ... spedas-agent-kit` command declared in `.mcp.json` and performs MCP
 initialize + tools/list — verifying the workflow, unified-data, and
-geometry/SPICE base tool groups are all present — without fetching mission data
-or downloading SPICE kernels. (The HAPI/FDSN datasource tools and the legacy
-CDAWeb/PDS compat tools are gated off by default and are reported as optional
-tiers, not base groups.)
+geometry/SPICE base tool groups are all present, and also verifies the packaged
+SPEDAS skill resources with `resources/list` / `resources/read`, without fetching
+mission data or downloading SPICE kernels. (The HAPI/FDSN datasource tools and
+the legacy CDAWeb/PDS compat tools are gated off by default and are reported as
+optional tiers, not base groups.)
+
+## MCP skill resources
+
+The current Agent Kit pin exposes the packaged SPEDAS workflow skills as
+read-only MCP resources while keeping `tools/list` compact:
+
+- `spedas-skill://index` — markdown index of bundled skills.
+- `spedas-skill://skills/spedas-workflow` — primary workflow skill body.
+
+Use `list_resources` to discover the full catalog and `read_resource` on a
+`spedas-skill://skills/<name>` URI when the conversation needs deeper workflow
+guidance than the tool schemas alone provide.
 
 For concrete per-tool arguments and return shapes, see
 [`tool-examples.md`](tool-examples.md),

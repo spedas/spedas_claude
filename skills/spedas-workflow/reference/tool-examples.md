@@ -7,7 +7,7 @@ layer. For source-specific (CDAWeb/PDS/SPICE) low-level tools, see
 [`backend-compatibility.md`](backend-compatibility.md); for geometry/SPICE
 tools, see [`geometry-spice.md`](geometry-spice.md).
 
-Arguments below match the pinned `spedas_agent_kit` tool schemas (17 base tools as of this
+Arguments below match the pinned `spedas_agent_kit` tool schemas (13 base tools as of this
 writing; verify with `python3 scripts/smoke_mcp_runtime.py --json`). Optional
 arguments show their schema default. **Only fetch tools download measurement data**. SPICE kernel downloads happen only when geometry calls explicitly set `allow_kernel_download=True`; examples here otherwise stay metadata/planning-safe.
 

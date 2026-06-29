@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
         "spedas-agent-kit"
       ]
     }
@@ -93,7 +93,11 @@ Expected runtime-smoke evidence at the current pin:
 {
   "ok": true,
   "tool_count": 13,
+  "resource_count": 23,
   "missing_base_tools": [],
+  "missing_skill_resources": [],
+  "skill_index_readable": true,
+  "workflow_skill_readable": true,
   "missing_groups": [],
   "optional_tiers": {
     "analysis": { "status": "absent", "unlock": "install spedas-agent-kit[analysis]" },
@@ -101,8 +105,8 @@ Expected runtime-smoke evidence at the current pin:
     "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
   },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
-    "resolved_spedas_agent_kit_commit": "e504dae10f428bfc2f67dd0c3fcdb9d8613b0d40",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
+    "resolved_spedas_agent_kit_commit": "4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
@@ -114,8 +118,21 @@ Expected runtime-smoke evidence at the current pin:
 ```
 
 The smoke starts the same `uvx ... spedas-agent-kit` command from `.mcp.json`,
-performs MCP `initialize` + `tools/list`, verifies the expected groups, and does
-not fetch science data or download SPICE kernels.
+performs MCP `initialize` + `tools/list` plus `resources/list` / `resources/read`,
+verifies the expected tool groups and packaged skill resources, and does not fetch
+science data or download SPICE kernels.
+
+At the current pin, Agent Kit also exposes its packaged runtime-neutral SPEDAS
+workflow skills as read-only MCP resources without adding to the 13-tool default
+surface:
+
+- `spedas-skill://index` — a markdown index of bundled skills.
+- `spedas-skill://skills/spedas-workflow` — the primary workflow skill body.
+
+Clients that support MCP resources should call `list_resources` and then
+`read_resource` on the relevant `spedas-skill://skills/<name>` URI when they need
+more workflow detail. Clients that do not expose resources can still use the
+Claude-packaged `skills/spedas-workflow/` files in this wrapper.
 
 ## Use from Claude Code
 
