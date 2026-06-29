@@ -14,17 +14,17 @@ concurrency:
 
 jobs:
   # Cross-platform job (issue #16): the wrapper validators and the offline
-  # self-tests are pure-Python and have no scientific dependencies, so they run
+  # self-tests are pure-Python and have no scientific runtime dependencies, so they run
   # cheaply on every OS/Python combination. This is where Windows/macOS path and
   # frontmatter regressions get caught — the things smoke_mcp_runtime.py was
   # written to be portable for but was previously only ever exercised on Linux.
   #
   # The runtime MCP smoke is deliberately NOT in this matrix: it resolves and
-  # builds the full scientific stack from spedas_mcp git HEAD (2-5 min), which is
-  # slow and brittle to run three times per OS. It runs once on Linux in the
-  # `smoke` job below. Once spedas_mcp is pinned (see CHANGELOG compatibility
-  # note), an actions/cache step keyed on the resolved dependency set can be
-  # added and the smoke can be widened safely.
+  # builds the full scientific stack from the pinned spedas-mcp[analysis] git
+  # source (2-5 min), which is slow and brittle to run three times per OS. It runs
+  # once on Linux in the `smoke` job below. Because spedas_mcp is pinned (see the
+  # CHANGELOG compatibility note), a future actions/cache step keyed on the
+  # resolved dependency set can widen the smoke safely.
   wrapper:
     name: wrapper (${{ matrix.os }} / py${{ matrix.python }})
     runs-on: ${{ matrix.os }}

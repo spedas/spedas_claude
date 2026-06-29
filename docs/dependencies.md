@@ -12,7 +12,7 @@ deployments. It addresses the reproducibility/provenance concern in issue #3.
 ## Runtime dependency: `spedas_mcp`
 
 `.mcp.json` launches the MCP server with `uvx`, **pinned** to an exact upstream
-commit and a **bounded** MCP protocol range:
+commit, the **analysis** extra enabled, and a **bounded** MCP protocol range:
 
 ```jsonc
 {
@@ -20,7 +20,7 @@ commit and a **bounded** MCP protocol range:
     "spedas": {
       "command": "uvx",
       "args": ["--with", "mcp>=1.26.0,<2",
-               "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+               "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
                "spedas-mcp"]
     }
   }
@@ -32,6 +32,7 @@ commit and a **bounded** MCP protocol range:
 | Source repo | `https://github.com/spedas/spedas_mcp.git` | official SPEDAS org repo |
 | Ref | `5ac9e2087ca7522bff45386c3a8d308e3d9d92b3` (full SHA) | content-addressed commit pin — reproducible, auditable |
 | Package name | `spedas-mcp` (`0.1.0` at time of writing) | from `spedas_mcp/pyproject.toml` |
+| Requested extra | `analysis` | installs the server-side PySPEDAS/matplotlib backend so Claude-callable analysis tools work out of the box (issue #49) |
 | Console script | `spedas-mcp` | `[project.scripts] spedas-mcp = "spedas_mcp:main"` |
 | Python | `>=3.10` | `requires-python` in `spedas_mcp/pyproject.toml` |
 | MCP protocol dep | `mcp>=1.26.0,<2` | floor matches `spedas_mcp`'s own `mcp` extra; upper bound `<2` blocks a breaking `mcp 2.x` from being pulled silently |
@@ -54,8 +55,9 @@ procedure in [`COMPATIBILITY.md`](../COMPATIBILITY.md)), not an implicit
 every-run resolution.
 
 The packaging validator (`scripts/validate_plugin.py`) now **enforces** this: it
-fails if the `spedas_mcp` source regresses to an unpinned git URL, or if the MCP
-requirement loses its upper bound. The runtime smoke
+fails if the `spedas_mcp` source regresses to an unpinned git URL, if the default
+source stops requesting `[analysis]`, or if the MCP requirement loses its upper
+bound. The runtime smoke
 (`scripts/smoke_mcp_runtime.py`) additionally prints a dependency-audit object
 and verifies the pinned server exposes the expected tool surface.
 
@@ -68,8 +70,8 @@ The pinned commit was verified against the official upstream at pin time:
 - Verified with: `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD`
   (the upstream default-branch HEAD resolved to this SHA at pin time)
 - Package version at this commit: `spedas-mcp 0.1.0`
-- Runtime smoke against this pin: `ok: true`, `tool_count: 17`, empty
-  `missing_core_tools`/`missing_groups`
+- Runtime smoke against this pin: `ok: true`, required primary tools present,
+  empty `missing_core_tools`/`missing_groups`; `tool_count` is currently 30 because the default runtime requests `[analysis]`
 
 To re-verify the pin still exists upstream, query the commit object (or open the
 GitHub tree URL). Do not rely on `git ls-remote <url> <sha>` for bare commit
@@ -87,7 +89,7 @@ See the full bump procedure and supply-chain trust model in
 1. Resolve the upstream commit you want:
    `git ls-remote https://github.com/spedas/spedas_mcp.git HEAD`
 2. Review the upstream diff, then set
-   `--from git+https://github.com/spedas/spedas_mcp.git@<sha>` in `.mcp.json`.
+   `--from "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@<sha>"` in `.mcp.json`.
 3. Run `python scripts/smoke_mcp_runtime.py --json` and confirm `ok: true` with an
    empty `missing_core_tools`; note the reported `tool_count`.
 4. Update the triple in `COMPATIBILITY.md`, the `CHANGELOG.md` table, and this

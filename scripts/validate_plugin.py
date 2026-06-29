@@ -201,18 +201,44 @@ def validate_hooks(hooks_value) -> None:
 
 
 _MCP_REQ_RE = re.compile(r"^mcp(?=[<>=!~])")
+_DIRECT_GIT_REQ_RE = re.compile(
+    r"^(?P<package>[A-Za-z0-9_.-]+)(?:\[(?P<extras>[^\]]*)\])?@(?P<url>git\+.+)$"
+)
+
+
+def _extract_git_source_and_extras(from_value: str) -> tuple[str, set[str]]:
+    """Return the git URL inside a uv/pip ``--from`` value and requested extras.
+
+    ``uvx --from`` accepts both a bare git URL and a PEP 508 direct reference such
+    as ``spedas-mcp[analysis] @ git+https://...@<sha>``. Issue #49 needs the
+    latter so the MCP server subprocess installs the analysis backend. Normalize
+    spaces before parsing because JSON args carry the whole direct reference as
+    one string.
+    """
+    compact = from_value.replace(" ", "")
+    match = _DIRECT_GIT_REQ_RE.match(compact)
+    if not match:
+        return from_value.strip(), set()
+    extras = {
+        item.strip().lower().replace("_", "-")
+        for item in (match.group("extras") or "").split(",")
+        if item.strip()
+    }
+    return match.group("url"), extras
 
 
 def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
-    """Split a pip/uv git URL into (url_without_ref, ref).
+    """Split a pip/uv git source into (url_without_ref, ref).
 
     A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
     forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
-    ``@`` before the final slash; those must NOT be treated as pinned refs.
+    ``@`` before the final slash; those must NOT be treated as pinned refs. The
+    input may be a bare git URL or a PEP 508 direct reference with extras.
     """
-    if not from_value.startswith("git+"):
-        return from_value, None
-    base, sep, fragment = from_value.partition("#")
+    git_source, _ = _extract_git_source_and_extras(from_value)
+    if not git_source.startswith("git+"):
+        return git_source, None
+    base, sep, fragment = git_source.partition("#")
     at = base.rfind("@")
     last_slash = base.rfind("/")
     if at > last_slash:
@@ -221,7 +247,7 @@ def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
         if sep:
             url = f"{url}#{fragment}"
         return url, ref
-    return from_value, None
+    return git_source, None
 
 
 def _is_mcp_requirement(compact: str) -> bool:
@@ -258,8 +284,15 @@ def _validate_mcp_pin(rel: str, args: list[str]) -> None:
         if not ref:
             fail(
                 f"{rel}: spedas_mcp source must be PINNED to a commit or tag "
-                f"(git+https://github.com/spedas/spedas_mcp.git@<sha-or-tag>); "
+                f"(spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@<sha-or-tag>); "
                 f"a floating default-branch HEAD is not reproducible (issue #3)"
+            )
+        _, extras = _extract_git_source_and_extras(from_value)
+        if "analysis" not in extras:
+            fail(
+                f"{rel}: spedas_mcp runtime must request the [analysis] extra in "
+                f"the --from spec (spedas-mcp[analysis] @ git+...); otherwise "
+                f"advertised analysis tools fail with dependency_missing (issue #49)"
             )
 
     # Find the mcp requirement among --with values (e.g. "mcp>=1.26.0,<2").

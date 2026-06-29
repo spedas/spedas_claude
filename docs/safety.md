@@ -1,7 +1,8 @@
 # Fetch & kernel safety boundary
 
-This plugin exposes the full SPEDAS MCP tool surface (17 base tools at the pinned
-`spedas_mcp` commit), including tools that perform **real network downloads**:
+This plugin exposes the SPEDAS MCP primary surface (17 base tools at the pinned
+`spedas_mcp` commit) plus analysis tools enabled by the default `[analysis]` extra.
+Some tools perform **real network downloads**:
 mission data products and SPICE kernels. This document defines the safety
 boundary, the opt-in language to use, and what to do before enabling real
 fetches. It addresses issue #6 (fetch/kernel safety) and is the runbook the

@@ -96,11 +96,24 @@ def main() -> int:
         data = json.loads(mcp.read_text())
         data["mcpServers"]["spedas"]["args"] = [
             "--with", "mcp>=1.26.0",
-            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+            "--from", "spedas-mcp[analysis] @ git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
             "spedas-mcp",
         ]
         mcp.write_text(json.dumps(data))
         expect_fail(p, "mcp requirement missing upper bound", "upper bound")
+
+        # 2d) Issue #49: the default runtime must request the analysis extra,
+        #     otherwise advertised analysis tools fail dependency_missing.
+        p = copy_plugin(base / "c2d")
+        mcp = p / ".mcp.json"
+        data = json.loads(mcp.read_text())
+        data["mcpServers"]["spedas"]["args"] = [
+            "--with", "mcp>=1.26.0,<2",
+            "--from", "git+https://github.com/spedas/spedas_mcp.git@5ac9e2087ca7522bff45386c3a8d308e3d9d92b3",
+            "spedas-mcp",
+        ]
+        mcp.write_text(json.dumps(data))
+        expect_fail(p, "spedas_mcp missing analysis extra", "[analysis]")
 
         # 3) Declared resource path that does not resolve relative to plugin root
         #    (this is exactly the issue #4 ambiguity made into a hard error).

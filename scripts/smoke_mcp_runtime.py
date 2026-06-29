@@ -112,18 +112,37 @@ def _check_groups(tools: list[str]) -> dict[str, dict[str, Any]]:
 # (deterministic) but not a content-addressed commit.
 _FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$|^[0-9a-f]{64}$")
 _MCP_REQ_RE = re.compile(r"^mcp(?=[<>=!~])")
+_DIRECT_GIT_REQ_RE = re.compile(
+    r"^(?P<package>[A-Za-z0-9_.-]+)(?:\[(?P<extras>[^\]]*)\])?@(?P<url>git\+.+)$"
+)
+
+
+def _extract_git_source_and_extras(from_value: str) -> tuple[str, set[str]]:
+    """Return the git URL inside a uv/pip ``--from`` value and requested extras."""
+    compact = from_value.replace(" ", "")
+    match = _DIRECT_GIT_REQ_RE.match(compact)
+    if not match:
+        return from_value.strip(), set()
+    extras = {
+        item.strip().lower().replace("_", "-")
+        for item in (match.group("extras") or "").split(",")
+        if item.strip()
+    }
+    return match.group("url"), extras
 
 
 def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
-    """Split a pip/uv git URL into (url_without_ref, ref).
+    """Split a pip/uv git source into (url_without_ref, ref).
 
     A real pin is the final ``@<ref>`` after the repository path. Userinfo/SSH
     forms such as ``git+ssh://git@github.com/spedas/spedas_mcp.git`` also contain
-    ``@`` before the final slash; those must NOT be treated as pinned refs.
+    ``@`` before the final slash; those must NOT be treated as pinned refs. The
+    input may be a bare git URL or a PEP 508 direct reference with extras.
     """
-    if not from_value.startswith("git+"):
-        return from_value, None
-    base, sep, fragment = from_value.partition("#")
+    git_source, _ = _extract_git_source_and_extras(from_value)
+    if not git_source.startswith("git+"):
+        return git_source, None
+    base, sep, fragment = git_source.partition("#")
     at = base.rfind("@")
     last_slash = base.rfind("/")
     if at > last_slash:
@@ -132,7 +151,7 @@ def _split_git_url_ref(from_value: str) -> tuple[str, str | None]:
         if sep:
             url = f"{url}#{fragment}"
         return url, ref
-    return from_value, None
+    return git_source, None
 
 
 def _is_mcp_requirement(compact: str) -> bool:
@@ -168,6 +187,7 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
     # the console entrypoint.
     from_value = _value_after("--from") or ""
     git_url, pinned_ref = _split_git_url_ref(from_value)
+    _, spedas_mcp_extras = _extract_git_source_and_extras(from_value)
 
     is_spedas_mcp_source = "github.com/spedas/spedas_mcp" in from_value
 
@@ -199,6 +219,8 @@ def _parse_dependency_audit(server: dict[str, Any]) -> dict[str, Any]:
         "resolved_spedas_mcp_commit": pinned_ref if ref_kind == "commit" else None,
         "mcp_requirement": mcp_requirement,
         "mcp_has_upper_bound": has_upper_bound,
+        "spedas_mcp_extras": sorted(spedas_mcp_extras),
+        "analysis_extra_enabled": "analysis" in spedas_mcp_extras,
         "entrypoint": entrypoint,
     }
 
@@ -633,6 +655,11 @@ def main() -> int:
         print(
             f"  mcp requirement: {da['mcp_requirement']} "
             f"(upper_bound={da['mcp_has_upper_bound']})"
+        )
+        print(
+            "  extras: "
+            f"{','.join(da['spedas_mcp_extras']) or '(none)'} "
+            f"(analysis={da['analysis_extra_enabled']})"
         )
         for name, info in groups.items():
             # With --skip-group-check the group result does not affect the exit
