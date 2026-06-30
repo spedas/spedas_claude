@@ -30,7 +30,7 @@ optional tier by default. The runtime smoke starts the same
 `uvx ... spedas-agent-kit` command declared in `.mcp.json` and performs MCP
 initialize + tools/list — verifying the workflow, unified-data, and
 geometry/SPICE base tool groups are all present, and also verifies the packaged
-SPEDAS skill resources with `resources/list` / `resources/read`, without fetching
+SPEDAS skill and preset resources with `resources/list` / `resources/read`, without fetching
 mission data or downloading SPICE kernels. (The HAPI/FDSN datasource tools and
 the legacy CDAWeb/PDS compat tools are gated off by default and are reported as
 optional tiers, not base groups.)
@@ -46,6 +46,20 @@ read-only MCP resources while keeping `tools/list` compact:
 Use `list_resources` to discover the full catalog and `read_resource` on a
 `spedas-skill://skills/<name>` URI when the conversation needs deeper workflow
 guidance than the tool schemas alone provide.
+
+## MCP preset resources
+
+The current Agent Kit pin also exposes paper/event reproduction presets and the
+canonical provenance schema as read-only resources, not tools:
+
+- `spedas-preset://index` — read this before hand-authoring time ranges for known solar-wind or magnetospheric events.
+- `spedas-preset://events/<id>` — one preset record with interval, data route, recommended skills, quality labels, and caveats.
+- `spedas-preset://schemas/reproduction_provenance` — the JSON schema for paper/event reproduction provenance.
+
+When Claude Code exposes MCP resources, use `resources/list` / `resources/read` for
+these URIs before making a known-event plan or provenance object. If the runtime only
+exposes MCP tools, keep the workflow artifact-first and explicitly record that preset
+resources were unavailable rather than pretending they are tool calls.
 
 For concrete per-tool arguments and return shapes, see
 [`tool-examples.md`](tool-examples.md),

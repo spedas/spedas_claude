@@ -19,6 +19,18 @@ run directory and fill in the blanks. That folder ships all five files plus
 (`environment.txt`) for you. See `templates/provenance/README.md` for the
 copy-and-fill workflow.
 
+## Canonical reproduction schema resource
+
+When your MCP client exposes resources, read the Agent Kit schema before inventing
+a run-provenance JSON shape:
+
+- `spedas-preset://schemas/reproduction_provenance`
+
+Use `resources/read` and validate artifact fields against that schema when
+possible. If the runtime exposes tools but not resources, keep the artifact-first
+structure below and record that resource access was unavailable rather than
+silently fabricating fields.
+
 ## What `environment.txt` must record (differs by layer)
 
 `environment.txt` is only useful if it captures the layer(s) the run actually used.
