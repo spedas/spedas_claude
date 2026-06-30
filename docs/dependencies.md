@@ -13,7 +13,7 @@ for reproducibility.
     "spedas": {
       "command": "uvx",
       "args": ["--with", "mcp>=1.26.0,<2",
-               "--from", "git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
+               "--from", "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
                "spedas-agent-kit"]
     }
   }
@@ -23,7 +23,7 @@ for reproducibility.
 | Field | Value |
 |---|---|
 | Source repo | `https://github.com/spedas/spedas_agent_kit.git` |
-| Ref | `4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa` |
+| Ref | `48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8` |
 | Package / console script | `spedas-agent-kit` |
 | Requested extras | none by default |
 | MCP protocol dep | `mcp>=1.26.0,<2` |
@@ -40,10 +40,10 @@ this document and the smoke evidence.
 ```bash
 python scripts/validate_plugin.py
 python scripts/smoke_mcp_runtime.py --json --timeout 300
-gh api repos/spedas/spedas_agent_kit/commits/4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa >/dev/null
+gh api repos/spedas/spedas_agent_kit/commits/48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8 >/dev/null
 ```
 
-The smoke should report `ok: true`, `tool_count: 13`, `resource_count: 23`, empty
+The smoke should report `ok: true`, `tool_count: 13`, `resource_count: 60`, empty
 missing tool/resource lists, readable `spedas-skill://index` and
 `spedas-skill://skills/spedas-workflow`, every `optional_tiers` entry
 `"status": "absent"`, and a dependency audit with

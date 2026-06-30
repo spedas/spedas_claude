@@ -96,6 +96,11 @@ EXPECTED_SKILL_RESOURCES = [
     "spedas-skill://skills/spedas-workflow",
 ]
 
+EXPECTED_PRESET_RESOURCES = [
+    "spedas-preset://index",
+    "spedas-preset://schemas/reproduction_provenance",
+]
+
 # Backwards-compatible alias; the default wrapper surface is the base surface.
 EXPECTED_CORE_TOOLS = BASE_EXPECTED_TOOLS
 
@@ -616,11 +621,35 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
             ),
             timeout,
         )
+        preset_index = await asyncio.wait_for(
+            mcp_client.request(
+                proc.stdout,
+                proc.stdin,
+                6,
+                "resources/read",
+                {"uri": "spedas-preset://index"},
+            ),
+            timeout,
+        )
+        provenance_schema = await asyncio.wait_for(
+            mcp_client.request(
+                proc.stdout,
+                proc.stdin,
+                7,
+                "resources/read",
+                {"uri": "spedas-preset://schemas/reproduction_provenance"},
+            ),
+            timeout,
+        )
+        preset_index_text = _read_resource_text(preset_index)
+        provenance_schema_text = _read_resource_text(provenance_schema)
         return {
             "tools": [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)],
             "resources": [resource.get("uri") for resource in resources if isinstance(resource, dict) and isinstance(resource.get("uri"), str)],
             "skill_index_readable": "spedas-skill://skills/" in _read_resource_text(skill_index),
             "workflow_skill_readable": "SPEDAS" in _read_resource_text(workflow_skill),
+            "preset_index_readable": "spedas-preset://events/" in preset_index_text or '"presets"' in preset_index_text,
+            "provenance_schema_readable": "SPEDAS Agent Kit reproduction provenance" in provenance_schema_text,
         }
     finally:
         # Report server stderr on any abnormal exit, even when stderr is empty (#26).
@@ -743,6 +772,8 @@ def main() -> int:
 
     missing = [name for name in BASE_EXPECTED_TOOLS if name not in tools]
     missing_skill_resources = [uri for uri in EXPECTED_SKILL_RESOURCES if uri not in resources]
+    missing_preset_resources = [uri for uri in EXPECTED_PRESET_RESOURCES if uri not in resources]
+    preset_event_resources = sorted(uri for uri in resources if uri.startswith("spedas-preset://events/"))
     groups = _check_groups(tools)
     missing_groups = [name for name, info in groups.items() if not info["ok"]]
     groups_ok = args.skip_group_check or not missing_groups
@@ -753,7 +784,13 @@ def main() -> int:
         and smoke["skill_index_readable"]
         and smoke["workflow_skill_readable"]
     )
-    ok = not missing and groups_ok and skill_resources_ok
+    preset_resources_ok = (
+        not missing_preset_resources
+        and bool(preset_event_resources)
+        and smoke["preset_index_readable"]
+        and smoke["provenance_schema_readable"]
+    )
+    ok = not missing and groups_ok and skill_resources_ok and preset_resources_ok
 
     payload = {
         "ok": ok,
@@ -763,8 +800,13 @@ def main() -> int:
         "resources": resources,
         "expected_skill_resources": EXPECTED_SKILL_RESOURCES,
         "missing_skill_resources": missing_skill_resources,
+        "expected_preset_resources": EXPECTED_PRESET_RESOURCES,
+        "missing_preset_resources": missing_preset_resources,
+        "preset_event_resource_count": len(preset_event_resources),
         "skill_index_readable": smoke["skill_index_readable"],
         "workflow_skill_readable": smoke["workflow_skill_readable"],
+        "preset_index_readable": smoke["preset_index_readable"],
+        "provenance_schema_readable": smoke["provenance_schema_readable"],
         "base_expected_tools": BASE_EXPECTED_TOOLS,
         "missing_base_tools": missing,
         "optional_tiers": optional_tiers,
@@ -778,7 +820,7 @@ def main() -> int:
         # independent of the temp-isolation the smoke applies to its subprocess.
         # Surfaces an unresolved ${HOME} or a wrong root on the real OS (issue #5).
         "configured_cache_diagnostics": offline_cache_diagnostics(server, os.environ.copy()),
-        "note": "initialize + tools/list + resources/list/read for packaged skills only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
+        "note": "initialize + tools/list + resources/list/read for packaged skills and presets only; no private credentials, interactive UI, data fetch, or SPICE kernel download",
     }
     if args.json:
         print(json.dumps(payload, indent=2))
@@ -821,10 +863,18 @@ def main() -> int:
             print("incomplete tool groups: " + ", ".join(missing_groups), file=sys.stderr)
         if missing_skill_resources:
             print("missing skill resources: " + ", ".join(missing_skill_resources), file=sys.stderr)
+        if missing_preset_resources:
+            print("missing preset resources: " + ", ".join(missing_preset_resources), file=sys.stderr)
+        if not preset_event_resources:
+            print("no spedas-preset://events/<id> resources were listed", file=sys.stderr)
         if not smoke["skill_index_readable"]:
             print("skill index resource was not readable", file=sys.stderr)
         if not smoke["workflow_skill_readable"]:
             print("spedas-workflow skill resource was not readable", file=sys.stderr)
+        if not smoke["preset_index_readable"]:
+            print("preset index resource was not readable", file=sys.stderr)
+        if not smoke["provenance_schema_readable"]:
+            print("reproduction provenance schema resource was not readable", file=sys.stderr)
     return 0 if payload["ok"] else 1
 
 

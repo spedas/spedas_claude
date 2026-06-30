@@ -27,6 +27,8 @@ Think in four layers:
    - PySPEDAS: decide `trange`, `probe`, `datatype`, `level`, variable names, and cache directory.
 4. Fetch only when the user/task calls for it. Keep windows narrow, make caches explicit, and expect public archive rate limits.
 5. Save artifacts with provenance: request, tool call/source, versions, cache/output roots, SHA-256 where useful, variable/source mapping, and caveats.
+   When the runtime exposes MCP resources, read `spedas-preset://index` before hand-authoring a known paper/event interval and use `spedas-preset://schemas/reproduction_provenance` before inventing a provenance JSON shape.
+   If Claude Code exposes tools but not resources, keep the workflow artifact-first and record that preset/schema resources were unavailable.
 6. Report results conclusion-first, with paths and exact next actions.
 
 ## Preferred SPEDAS Agent Kit MCP tools
@@ -100,7 +102,7 @@ and which provenance artifacts to attach, see `reference/troubleshooting.md`.
 
 ## Analysis-layer tool maturity
 
-Beyond the 17 current base MCP tools (discovery, planning, fetch, geometry, optional backend entrypoints), the
+Beyond the 13 current base MCP tools (discovery, planning, unified data, and geometry/SPICE), the
 analysis/transformation/plotting layer is **proposed** on `spedas_agent_kit` (issues
 #12–#22) and may not be released yet. The recipe/workflow references above tag these
 `[proposed: spedas_agent_kit #NN]`. **Confirm a proposed tool is live** (via

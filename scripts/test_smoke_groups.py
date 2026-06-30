@@ -212,17 +212,17 @@ def test_dependency_audit_parses_pinned_sha() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
             "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["is_spedas_agent_kit_source"], audit
     assert audit["configured_git_url"] == "git+https://github.com/spedas/spedas_agent_kit.git", audit
-    assert audit["pinned_ref"] == "4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa", audit
+    assert audit["pinned_ref"] == "48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
-    assert audit["resolved_spedas_agent_kit_commit"] == "4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa", audit
+    assert audit["resolved_spedas_agent_kit_commit"] == "48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8", audit
     assert audit["mcp_requirement"] == "mcp>=1.26.0,<2", audit
     assert audit["mcp_has_upper_bound"] is True, audit
     assert audit["spedas_agent_kit_extras"] == [], audit
@@ -275,13 +275,13 @@ def test_dependency_audit_direct_ref_with_ssh_userinfo_and_ref() -> None:
     server = {
         "args": [
             "--with", "mcp>=1.26.0,<2",
-            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa",
+            "--from", "git+ssh://git@github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
             "spedas-agent-kit",
         ],
     }
     audit = smoke._parse_dependency_audit(server)
     assert audit["configured_git_url"] == "git+ssh://git@github.com/spedas/spedas_agent_kit.git", audit
-    assert audit["pinned_ref"] == "4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa", audit
+    assert audit["pinned_ref"] == "48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8", audit
     assert audit["ref_kind"] == "commit", audit
     assert audit["is_pinned"] is True, audit
     assert audit["spedas_agent_kit_extras"] == [], audit

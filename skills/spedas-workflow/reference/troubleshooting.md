@@ -45,7 +45,7 @@ science tool runs.
 | Signal | Likely cause | Fix |
 |---|---|---|
 | `command not found: uvx` | `uv` not installed / not on `PATH` | install `uv` via the official uv installation guide (https://docs.astral.sh/uv/getting-started/installation/); reopen shell |
-| Smoke hangs/times out on first run | `uvx` resolving the pinned `spedas_agent_kit` commit from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with 'mcp>=1.26.0,<2' --from git+https://github.com/spedas/spedas_agent_kit.git@4d3e9a737e8bdd17988fb1f8f233e42aeaaa5baa spedas-agent-kit --help`, matching `.mcp.json`) |
+| Smoke hangs/times out on first run | `uvx` resolving the pinned `spedas_agent_kit` commit from GitHub with no/blocked network | allow network for first run; raise `--timeout`; pre-warm (`uvx --with 'mcp>=1.26.0,<2' --from git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8 spedas-agent-kit --help`, matching `.mcp.json`) |
 | `Failed to spawn` / `Permission denied` writing cache or temp | `UV_CACHE_DIR` / `XDG_CACHE_HOME` / `TMPDIR` or a cache dir is read-only / over quota | point them at a writable path ([`configuration.md`](../../../docs/configuration.md)); the smoke auto-falls-back, real runs do not |
 | `No solution found` / cannot resolve `spedas_agent_kit` | wrong/inaccessible `--from` URL, or a pinned ref that no longer exists | restore the official URL in `.mcp.json`; re-check any `@ref` pin |
 | `missing_base_tools` non-empty in the smoke | resolved `spedas_agent_kit` HEAD changed its base tool surface | confirm/pin a known-good `spedas_agent_kit` ref ([`dependencies.md`](../../../docs/dependencies.md)) |
