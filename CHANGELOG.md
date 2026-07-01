@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Repin to Agent Kit `a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0` and sync the Batch 3 THEMIS workflow routing skill (`themis-workflows`), raising the shared skill/resource surface to 32 skills / 66 resources without adding default tools.
+- Repin to Agent Kit `4c1fd134ff9d327ebb3f0efe8ee963b9bb7a8aa0` and sync the Batch 4 MMS basic workflow skill (`mms-basic-workflows`), raising the shared skill/resource surface to 33 skills / 67 resources without adding default tools.
 
 # Changelog
 
