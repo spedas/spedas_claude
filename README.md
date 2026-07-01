@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@f2379da6b3b7cfb24fe32614e7c50008c306fecb",
         "spedas-agent-kit"
       ]
     }
@@ -93,7 +93,7 @@ Expected runtime-smoke evidence at the current pin:
 {
   "ok": true,
   "tool_count": 13,
-  "resource_count": 60,
+  "resource_count": 61,
   "missing_base_tools": [],
   "missing_skill_resources": [],
   "missing_preset_resources": [],
@@ -101,6 +101,7 @@ Expected runtime-smoke evidence at the current pin:
   "workflow_skill_readable": true,
   "preset_index_readable": true,
   "provenance_schema_readable": true,
+  "analysis_run_schema_readable": true,
   "missing_groups": [],
   "optional_tiers": {
     "analysis": { "status": "absent", "unlock": "install spedas-agent-kit[analysis]" },
@@ -108,8 +109,8 @@ Expected runtime-smoke evidence at the current pin:
     "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
   },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
-    "resolved_spedas_agent_kit_commit": "161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@f2379da6b3b7cfb24fe32614e7c50008c306fecb",
+    "resolved_spedas_agent_kit_commit": "f2379da6b3b7cfb24fe32614e7c50008c306fecb",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
@@ -126,20 +127,21 @@ verifies the expected tool groups plus packaged skill and preset resources, and 
 not fetch science data or download SPICE kernels.
 
 At the current pin, Agent Kit also exposes packaged runtime-neutral SPEDAS workflow
-skills **and paper/event reproduction presets** as read-only MCP resources without
-adding to the 13-tool default surface:
+skills, paper/event reproduction presets, and analysis-bundle provenance schemas
+as read-only MCP resources without adding to the 13-tool default surface:
 
 - `spedas-skill://index` — a markdown index of bundled skills.
 - `spedas-skill://skills/spedas-skills-index` — the shared skill router.
 - `spedas-skill://skills/spedas-workflow` — the primary workflow skill body.
 - `spedas-preset://index` — a machine-readable event/paper preset catalog.
 - `spedas-preset://events/<id>` — one preset record with interval, data route, recommended skills, quality labels, and caveats.
-- `spedas-preset://schemas/reproduction_provenance` — the canonical reproduction-provenance JSON schema.
+- `spedas-preset://schemas/reproduction_provenance` — the canonical paper-reproduction provenance JSON schema.
+- `spedas-preset://schemas/analysis_bundle_run` — the canonical analysis-bundle `provenance/run.json` schema.
 
 Clients that support MCP resources should call `list_resources` and then
 `read_resource` on the relevant `spedas-skill://skills/<name>` or
-`spedas-preset://...` URI when they need more workflow detail or a known-event
-reproduction schema. Clients that do not expose resources can still use the
+`spedas-preset://...` URI when they need more workflow detail, a known-event reproduction schema, or the
+analysis-bundle run provenance schema. Clients that do not expose resources can still use the
 Claude-packaged `skills/spedas-workflow/` files in this wrapper, but should record
 that preset/schema resources were unavailable instead of inventing fields.
 

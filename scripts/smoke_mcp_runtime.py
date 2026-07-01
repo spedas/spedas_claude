@@ -99,6 +99,7 @@ EXPECTED_SKILL_RESOURCES = [
 EXPECTED_PRESET_RESOURCES = [
     "spedas-preset://index",
     "spedas-preset://schemas/reproduction_provenance",
+    "spedas-preset://schemas/analysis_bundle_run",
 ]
 
 # Backwards-compatible alias; the default wrapper surface is the base surface.
@@ -641,8 +642,19 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
             ),
             timeout,
         )
+        analysis_run_schema = await asyncio.wait_for(
+            mcp_client.request(
+                proc.stdout,
+                proc.stdin,
+                8,
+                "resources/read",
+                {"uri": "spedas-preset://schemas/analysis_bundle_run"},
+            ),
+            timeout,
+        )
         preset_index_text = _read_resource_text(preset_index)
         provenance_schema_text = _read_resource_text(provenance_schema)
+        analysis_run_schema_text = _read_resource_text(analysis_run_schema)
         return {
             "tools": [tool.get("name") for tool in tools if isinstance(tool, dict) and isinstance(tool.get("name"), str)],
             "resources": [resource.get("uri") for resource in resources if isinstance(resource, dict) and isinstance(resource.get("uri"), str)],
@@ -650,6 +662,7 @@ async def _smoke(command: str, args: list[str], env: dict[str, str], timeout: fl
             "workflow_skill_readable": "SPEDAS" in _read_resource_text(workflow_skill),
             "preset_index_readable": "spedas-preset://events/" in preset_index_text or '"presets"' in preset_index_text,
             "provenance_schema_readable": "SPEDAS Agent Kit reproduction provenance" in provenance_schema_text,
+            "analysis_run_schema_readable": "SPEDAS Agent Kit analysis bundle run provenance" in analysis_run_schema_text,
         }
     finally:
         # Report server stderr on any abnormal exit, even when stderr is empty (#26).
@@ -789,6 +802,7 @@ def main() -> int:
         and bool(preset_event_resources)
         and smoke["preset_index_readable"]
         and smoke["provenance_schema_readable"]
+        and smoke["analysis_run_schema_readable"]
     )
     ok = not missing and groups_ok and skill_resources_ok and preset_resources_ok
 
@@ -807,6 +821,7 @@ def main() -> int:
         "workflow_skill_readable": smoke["workflow_skill_readable"],
         "preset_index_readable": smoke["preset_index_readable"],
         "provenance_schema_readable": smoke["provenance_schema_readable"],
+        "analysis_run_schema_readable": smoke["analysis_run_schema_readable"],
         "base_expected_tools": BASE_EXPECTED_TOOLS,
         "missing_base_tools": missing,
         "optional_tiers": optional_tiers,
@@ -875,6 +890,8 @@ def main() -> int:
             print("preset index resource was not readable", file=sys.stderr)
         if not smoke["provenance_schema_readable"]:
             print("reproduction provenance schema resource was not readable", file=sys.stderr)
+        if not smoke["analysis_run_schema_readable"]:
+            print("analysis-bundle run provenance schema resource was not readable", file=sys.stderr)
     return 0 if payload["ok"] else 1
 
 
