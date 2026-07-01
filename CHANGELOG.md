@@ -1,4 +1,5 @@
 ## Unreleased
+- Repin to Agent Kit `7bf1eb5297c1d5086ed92cbf5841e984db76791c` and sync the Batch 6 coordinate transform recipe skill (`coordinate-transform-recipes`), raising the shared skill/resource surface to 35 skills / 69 resources without adding default tools.
 
 - Repin to Agent Kit `b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb` and sync the Batch 5 PSP / Solar Orbiter heliophysics workflow skill (`psp-solo-heliophysics-workflows`), raising the shared skill/resource surface to 34 skills / 68 resources without adding default tools.
 
