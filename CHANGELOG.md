@@ -1,4 +1,6 @@
 ## Unreleased
+- Repin to Agent Kit `df17d32e6ce2da00cd6d8775a90ae726547429df` and sync the Batch 8 particle distribution recipe skill (`particle-distribution-recipes`), raising the shared skill/resource surface to 37 skills / 71 resources without adding default tools.
+
 - Repin to Agent Kit `56dd235ef898f01e42550884b87913bb44030086` and sync the Batch 7 PyTplot plotting options skill (`pytplot-plotting-options`), raising the shared skill/resource surface to 36 skills / 70 resources without adding default tools.
 
 - Repin to Agent Kit `7bf1eb5297c1d5086ed92cbf5841e984db76791c` and sync the Batch 6 coordinate transform recipe skill (`coordinate-transform-recipes`), raising the shared skill/resource surface to 35 skills / 69 resources without adding default tools.
