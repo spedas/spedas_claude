@@ -20,7 +20,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
 - `.claude-plugin/plugin.json` — Claude Code plugin metadata and resource declarations.
 - `.mcp.json` — starts the pinned `spedas-agent-kit` MCP server from
   `spedas/spedas_agent_kit` via `uvx`.
-- `skills/` — Claude-packaged copy of the 33 canonical Agent Kit shared skills; start with `skills/spedas-skills-index/SKILL.md` or `skills/spedas-workflow/SKILL.md`.
+- `skills/` — Claude-packaged copy of the 34 canonical Agent Kit shared skills; start with `skills/spedas-skills-index/SKILL.md` or `skills/spedas-workflow/SKILL.md`.
 - `commands/` — Claude Code slash-command prompts: `overview`, `data`, `workflow`,
   `geometry`, and `analyze`.
 - `hooks/hooks.json` plus `hooks/fetch_guard.py` — default `PreToolUse` posture for
@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@4c1fd134ff9d327ebb3f0efe8ee963b9bb7a8aa0",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb",
         "spedas-agent-kit"
       ]
     }
@@ -93,7 +93,7 @@ Expected runtime-smoke evidence at the current pin:
 {
   "ok": true,
   "tool_count": 13,
-  "resource_count": 67,
+  "resource_count": 68,
   "missing_base_tools": [],
   "missing_skill_resources": [],
   "missing_preset_resources": [],
@@ -109,8 +109,8 @@ Expected runtime-smoke evidence at the current pin:
     "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
   },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@4c1fd134ff9d327ebb3f0efe8ee963b9bb7a8aa0",
-    "resolved_spedas_agent_kit_commit": "4c1fd134ff9d327ebb3f0efe8ee963b9bb7a8aa0",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb",
+    "resolved_spedas_agent_kit_commit": "b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",

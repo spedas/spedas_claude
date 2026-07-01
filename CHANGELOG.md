@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Repin to Agent Kit `4c1fd134ff9d327ebb3f0efe8ee963b9bb7a8aa0` and sync the Batch 4 MMS basic workflow skill (`mms-basic-workflows`), raising the shared skill/resource surface to 33 skills / 67 resources without adding default tools.
+- Repin to Agent Kit `b30d5d6fd05c56ee46ab7c3f2192edd7288a25cb` and sync the Batch 5 PSP / Solar Orbiter heliophysics workflow skill (`psp-solo-heliophysics-workflows`), raising the shared skill/resource surface to 34 skills / 68 resources without adding default tools.
 
 # Changelog
 
