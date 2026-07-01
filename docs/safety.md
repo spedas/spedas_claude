@@ -10,7 +10,7 @@ enabled default `hooks/hooks.json` guard.
 
 > **Caveat:** the tools and their fetch/kernel behavior live in the upstream
 > `spedas_agent_kit` server, which `.mcp.json` now resolves from a **pinned commit**
-> (`f2379da6b3b7cfb24fe32614e7c50008c306fecb`). The pin makes the tool surface
+> (`e6e27a2a2ced1468eeef93ab0d0e1870a57538d9`). The pin makes the tool surface
 > stable per install; re-verify this boundary whenever you **bump** the pin, since
 > a new commit can alter what counts as a fetch/kernel tool (see
 > [`COMPATIBILITY.md`](../COMPATIBILITY.md) and [`dependencies.md`](dependencies.md)).

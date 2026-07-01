@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@f2379da6b3b7cfb24fe32614e7c50008c306fecb",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@e6e27a2a2ced1468eeef93ab0d0e1870a57538d9",
         "spedas-agent-kit"
       ]
     }
@@ -109,8 +109,8 @@ Expected runtime-smoke evidence at the current pin:
     "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
   },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@f2379da6b3b7cfb24fe32614e7c50008c306fecb",
-    "resolved_spedas_agent_kit_commit": "f2379da6b3b7cfb24fe32614e7c50008c306fecb",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@e6e27a2a2ced1468eeef93ab0d0e1870a57538d9",
+    "resolved_spedas_agent_kit_commit": "e6e27a2a2ced1468eeef93ab0d0e1870a57538d9",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
