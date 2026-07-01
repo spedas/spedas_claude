@@ -16,7 +16,7 @@ This repository is a thin Claude Code wrapper around the official
 
 | spedas-claude | Agent Kit source | MCP protocol range |
 |---|---|---|
-| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@e6e27a2a2ced1468eeef93ab0d0e1870a57538d9` (pinned commit, no extras) | `mcp>=1.26.0,<2` |
+| 0.1.0 | `git+https://github.com/spedas/spedas_agent_kit.git@bec499f999846571ae1b2964275f9225ac457c27` (pinned commit, no extras) | `mcp>=1.26.0,<2` |
 
 The current pin exposes the **13-tool base** Agent Kit surface and also exposes
 **61 MCP resources** (bundled `spedas-skill://...` skills plus `spedas-preset://...` event/provenance resources, including both paper-reproduction and analysis-bundle run schemas) without
@@ -30,9 +30,9 @@ rather than this wrapper's default.
 
 ### Changed
 - Repin the Claude Code wrapper to Agent Kit
-  `e6e27a2a2ced1468eeef93ab0d0e1870a57538d9`, keeping the wrapper aligned with
-  the latest runtime-neutral analysis-bundle provenance guidance and no-fetch
-  smoke coverage in the upstream Agent Kit.
+  `bec499f999846571ae1b2964275f9225ac457c27`, keeping the wrapper aligned with
+  the latest runtime-neutral analysis-bundle provenance guidance, no-fetch
+  smoke coverage, and MCP-first geomagnetic overview route gates in the upstream Agent Kit.
 - Reframe this repository as a Claude-only thin wrapper. The Agent Kit core owns
   the MCP server, implementation, and canonical shared skills; Codex lives in the
   separate `spedas_codex` wrapper repository.
