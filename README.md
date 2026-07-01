@@ -20,7 +20,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
 - `.claude-plugin/plugin.json` — Claude Code plugin metadata and resource declarations.
 - `.mcp.json` — starts the pinned `spedas-agent-kit` MCP server from
   `spedas/spedas_agent_kit` via `uvx`.
-- `skills/spedas-workflow/SKILL.md` — Claude-consumable SPEDAS workflow guidance.
+- `skills/` — Claude-packaged copy of the 27 canonical Agent Kit shared skills; start with `skills/spedas-skills-index/SKILL.md` or `skills/spedas-workflow/SKILL.md`.
 - `commands/` — Claude Code slash-command prompts: `overview`, `data`, `workflow`,
   `geometry`, and `analyze`.
 - `hooks/hooks.json` plus `hooks/fetch_guard.py` — default `PreToolUse` posture for
@@ -40,7 +40,7 @@ The shared MCP server, tool implementations, and canonical shared skills live in
       "command": "uvx",
       "args": [
         "--with", "mcp>=1.26.0,<2",
-        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
+        "--from", "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
         "spedas-agent-kit"
       ]
     }
@@ -108,8 +108,8 @@ Expected runtime-smoke evidence at the current pin:
     "compat": { "status": "absent", "unlock": "SPEDAS_AGENT_KIT_COMPAT_TOOLS=1" }
   },
   "dependency_audit": {
-    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
-    "resolved_spedas_agent_kit_commit": "48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
+    "from_arg": "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
+    "resolved_spedas_agent_kit_commit": "161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
     "ref_kind": "commit",
     "is_pinned": true,
     "mcp_requirement": "mcp>=1.26.0,<2",
@@ -130,6 +130,7 @@ skills **and paper/event reproduction presets** as read-only MCP resources witho
 adding to the 13-tool default surface:
 
 - `spedas-skill://index` — a markdown index of bundled skills.
+- `spedas-skill://skills/spedas-skills-index` — the shared skill router.
 - `spedas-skill://skills/spedas-workflow` — the primary workflow skill body.
 - `spedas-preset://index` — a machine-readable event/paper preset catalog.
 - `spedas-preset://events/<id>` — one preset record with interval, data route, recommended skills, quality labels, and caveats.
@@ -163,7 +164,8 @@ chat.
 - Dependency narrative: [`docs/dependencies.md`](docs/dependencies.md).
 - Cache/env configuration: [`docs/configuration.md`](docs/configuration.md).
 - Safety posture: [`docs/safety.md`](docs/safety.md).
-- Troubleshooting and issue-routing: [`skills/spedas-workflow/reference/troubleshooting.md`](skills/spedas-workflow/reference/troubleshooting.md).
+- Skill routing: [`skills/spedas-skills-index/SKILL.md`](skills/spedas-skills-index/SKILL.md).
+- Default workflow: [`skills/spedas-workflow/SKILL.md`](skills/spedas-workflow/SKILL.md).
 
 When changing the Agent Kit pin, update `.mcp.json`, `COMPATIBILITY.md`,
 `docs/dependencies.md`, this README's smoke evidence, and the changelog together.

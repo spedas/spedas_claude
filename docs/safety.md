@@ -10,7 +10,7 @@ enabled default `hooks/hooks.json` guard.
 
 > **Caveat:** the tools and their fetch/kernel behavior live in the upstream
 > `spedas_agent_kit` server, which `.mcp.json` now resolves from a **pinned commit**
-> (`48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8`). The pin makes the tool surface
+> (`161aecc087e7bf1ecdd4879b3cacd44d0980e50e`). The pin makes the tool surface
 > stable per install; re-verify this boundary whenever you **bump** the pin, since
 > a new commit can alter what counts as a fetch/kernel tool (see
 > [`COMPATIBILITY.md`](../COMPATIBILITY.md) and [`dependencies.md`](dependencies.md)).
@@ -99,6 +99,6 @@ for the repository default, keep the issue #6 guard enabled.
 ## See also
 
 - [`configuration.md`](configuration.md) — cache/kernel directories the fetches write to.
-- [`../skills/spedas-workflow/SKILL.md`](../skills/spedas-workflow/SKILL.md) — the metadata-first default workflow.
-- [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md) — rate limits, 429s, kernel/network failures.
+- [`../skills/spedas-skills-index/SKILL.md`](../skills/spedas-skills-index/SKILL.md) — route from science intent to the right shared skill.
+- [`../skills/spedas-workflow/SKILL.md`](../skills/spedas-workflow/SKILL.md) — metadata-first default workflow and artifact/provenance guardrails.
 - [`../templates/provenance/`](../templates/provenance/) — record what you fetched and why.

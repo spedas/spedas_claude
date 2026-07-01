@@ -41,9 +41,9 @@ cd runs/2015-10-16-mms-magnetopause
 
 `environment.txt` is useless for reproducibility unless it records the resolved
 **`spedas_agent_kit` commit**. `capture_environment.sh` resolves the upstream HEAD for
-you. What else to record depends on the layer you used — see
-[`../../skills/spedas-workflow/reference/artifact-provenance.md`](../../skills/spedas-workflow/reference/artifact-provenance.md)
-(MCP-only vs. PySPEDAS runs).
+you. What else to record depends on the layer you used; follow the
+artifact-first guidance in [`../../skills/spedas-workflow/SKILL.md`](../../skills/spedas-workflow/SKILL.md)
+and record whether the run was MCP-only, PySPEDAS-backed, or mixed.
 
 These templates are intentionally minimal. There is no required generator or hook —
 fill them by hand or wire them into your own tooling.

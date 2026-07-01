@@ -96,7 +96,7 @@ def main() -> int:
         data = json.loads(mcp.read_text())
         data["mcpServers"]["spedas"]["args"] = [
             "--with", "mcp>=1.26.0",
-            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
+            "--from", "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
             "spedas-agent-kit",
         ]
         mcp.write_text(json.dumps(data))
@@ -132,10 +132,11 @@ def main() -> int:
         (p / "docs" / "safety.md").unlink()
         expect_fail(p, "missing docs/safety.md", "docs/safety.md")
 
-        # 8) Batch C: the troubleshooting runbook (#13) must exist.
+        # 8) The shared skill router must exist; the wrapper should carry the
+        #    full exported Agent Kit shared skill set, not just one workflow skill.
         p = copy_plugin(base / "c8")
-        (p / "skills" / "spedas-workflow" / "reference" / "troubleshooting.md").unlink()
-        expect_fail(p, "missing troubleshooting runbook", "troubleshooting.md")
+        (p / "skills" / "spedas-skills-index" / "SKILL.md").unlink()
+        expect_fail(p, "missing shared skill router", "spedas-skills-index")
 
         # 9) Batch C: a provenance template (#14) must exist.
         p = copy_plugin(base / "c9")
