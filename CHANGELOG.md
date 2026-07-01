@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Repin to Agent Kit `8e3789539feb0ce79fe112be17465b40f363696d` and sync the Batch 1 foundational PySPEDAS/IDL shared skills (`pyspedas-load-planning`, `tplot-data-lifecycle`, `spedas-heritage-vocabulary`).
+- Repin to Agent Kit `8fcfc7dd0e6f01800f301590ed8213eb33683582` and sync the Batch 2 OMNI/Kyoto/NOAA smoke workflow skill (`omni-kyoto-noaa-smoke-workflows`), raising the shared skill/resource surface to 31 skills / 65 resources without adding default tools.
 
 # Changelog
 
