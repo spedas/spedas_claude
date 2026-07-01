@@ -69,11 +69,11 @@ TOOL_GROUPS: dict[str, list[str]] = {
     ],
 }
 
-# Base/default tools that MUST be present for the current pinned spedas_agent_kit
-# server with no extras and no gate flags. This is the 13-tool base surface at
-# commit 4d3e9a. Optional analysis tools, HAPI/FDSN datasource tools, and the
-# legacy CDAWeb/PDS compat tools are NOT in this list because they are gated off
-# by default (see OPTIONAL_TIERS).
+# Base/default tools that MUST be present for the current pinned
+# spedas_agent_kit server with no extras and no gate flags. The default surface
+# currently has 13 tools. Optional analysis tools, HAPI/FDSN datasource tools,
+# and the legacy CDAWeb/PDS compat tools are NOT in this list because they are
+# gated off by default (see OPTIONAL_TIERS).
 BASE_EXPECTED_TOOLS = [
     "spedas_overview",
     "search_spedas_data_sources",
