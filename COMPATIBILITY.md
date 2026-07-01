@@ -10,7 +10,7 @@ the Agent Kit commit, and the MCP protocol range.
 | Component | Pinned value | Source of truth |
 |---|---|---|
 | `spedas-claude` wrapper | `0.1.0` on `main` (no release tag cut yet) | `.claude-plugin/plugin.json` |
-| `spedas_agent_kit` commit | `8fcfc7dd0e6f01800f301590ed8213eb33683582` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@8fcfc7dd0e6f01800f301590ed8213eb33683582` |
+| `spedas_agent_kit` commit | `a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0` |
 | Default Agent Kit extras | none | base 13-tool surface; analysis/datasource/compat tiers are gated opt-ins |
 | MCP protocol range | `mcp>=1.26.0,<2` | `.mcp.json` `--with` |
 
@@ -19,7 +19,7 @@ the Agent Kit commit, and the MCP protocol range.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@8fcfc7dd0e6f01800f301590ed8213eb33683582",
+         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0",
          "spedas-agent-kit"]
 ```
 
@@ -41,14 +41,14 @@ python scripts/smoke_mcp_runtime.py --json --timeout 300
 
 In the smoke JSON, confirm:
 
-- `dependency_audit.resolved_spedas_agent_kit_commit == "8fcfc7dd0e6f01800f301590ed8213eb33683582"`
+- `dependency_audit.resolved_spedas_agent_kit_commit == "a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0"`
 - `dependency_audit.ref_kind == "commit"`
 - `dependency_audit.is_pinned == true`
 - `dependency_audit.mcp_has_upper_bound == true`
 - `dependency_audit.spedas_agent_kit_extras == []`
 - `dependency_audit.analysis_extra_enabled == false`
 - `ok == true`, empty `missing_base_tools`, empty `missing_groups`
-- `tool_count == 13` and `resource_count == 65` for the current base/resource surface
+- `tool_count == 13` and `resource_count == 66` for the current base/resource surface
 - empty `missing_skill_resources` and `missing_preset_resources`
 - `provenance_schema_readable == true` and `analysis_run_schema_readable == true`
 - every entry under `optional_tiers` reports `"status": "absent"` (this wrapper
@@ -57,7 +57,7 @@ In the smoke JSON, confirm:
 To confirm the commit still exists upstream:
 
 ```bash
-gh api repos/spedas/spedas_agent_kit/commits/8fcfc7dd0e6f01800f301590ed8213eb33683582 >/dev/null
+gh api repos/spedas/spedas_agent_kit/commits/a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0 >/dev/null
 ```
 
 ## Bump procedure
