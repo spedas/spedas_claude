@@ -62,7 +62,7 @@ Notes that matter for reproducibility:
 - The **CDAWeb backend bootstraps** bundled observatory + metadata files into its
   cache root on first access. Pointing `XHELIO_CDAWEB_CACHE_DIR` at a fresh empty
   directory is fine — it is populated automatically. A read-only cache root will
-  fail this bootstrap; see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md).
+  fail this bootstrap; rerun the smoke command with `--json` and keep the compact error payload for issue triage.
 - A **resolution-order** subtlety: a CLI flag in `.mcp.json` `args` wins over the
   environment variable of the same purpose (the server reads
   `args.<flag> or os.environ.get(<VAR>)`). Pick one mechanism per directory.
@@ -112,7 +112,7 @@ self-tested in `scripts/test_cache_paths.py`.
 You can also run the full runtime smoke and inspect the directories it reports /
 creates, or check that the cache directory fills after a real (opt-in) fetch. If
 the cache stays empty across runs, expansion or writability is the likely cause
-(see [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md)).
+(rerun the smoke command with `--json` and check the expanded cache paths before assuming the archive is empty).
 
 ## 3. Advanced: runtime / developer / debug knobs
 
@@ -133,7 +133,7 @@ deployment, pre-warm `UV_CACHE_DIR` once with network access:
 
 ```bash
 UV_CACHE_DIR=/shared/uv-cache \
-  uvx --from "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8" spedas-agent-kit --help
+  uvx --from "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e" spedas-agent-kit --help
 ```
 
 then point `.mcp.json`'s process at the same `UV_CACHE_DIR`.
@@ -169,4 +169,5 @@ per-call arguments.
 - [`../.mcp.json`](../.mcp.json) — the packaged defaults.
 - [`dependencies.md`](dependencies.md) — pinning the `spedas_agent_kit` source for reproducibility.
 - [`safety.md`](safety.md) — the fetch/kernel safety boundary (what fills these caches and when).
-- [`../skills/spedas-workflow/reference/troubleshooting.md`](../skills/spedas-workflow/reference/troubleshooting.md) — diagnosing cache/permission failures.
+- [`../skills/spedas-skills-index/SKILL.md`](../skills/spedas-skills-index/SKILL.md) — choosing the right shared SPEDAS skill.
+- [`../skills/spedas-workflow/SKILL.md`](../skills/spedas-workflow/SKILL.md) — default artifact-first workflow guardrails.

@@ -34,6 +34,37 @@ ROOT = Path(__file__).resolve().parents[1]
 
 errors: list[str] = []
 
+EXPECTED_SHARED_SKILLS = {
+    "apply-rotation-matrix",
+    "boundary-minimum-variance",
+    "coordinate-frame-tour",
+    "dual-spacecraft-timing",
+    "erg-arase-radiation-belt-waves",
+    "field-line-footpoint",
+    "hodogram",
+    "magnetopause-lmn-analysis",
+    "model-lmn-boundary",
+    "multi-spacecraft-gradients",
+    "neutral-sheet-distance",
+    "overview-geomagnetic-indices",
+    "paper-reproduction",
+    "particle-velocity-slice",
+    "pitch-angle-distribution",
+    "power-spectral-density",
+    "psp-solar-wind-switchbacks",
+    "solar-wind-icme-storm",
+    "solar-wind-turbulence-intermittency",
+    "solar-wind-turbulence-spectrum",
+    "spectral-cross-coherence",
+    "spedas-agent-kit-anatomy",
+    "spedas-skills-index",
+    "spedas-workflow",
+    "spice-conjunction-finder",
+    "timeseries-cleaning",
+    "wave-polarization",
+}
+
+
 
 def fail(msg: str) -> None:
     errors.append(msg)
@@ -114,6 +145,10 @@ def validate_skill_dir(skills_dir: Path) -> None:
     if not skill_files:
         fail(f"no SKILL.md found under {skills_dir.relative_to(ROOT).as_posix()}/*/")
         return
+    skill_names = {sf.parent.name for sf in skill_files}
+    missing_shared = sorted(EXPECTED_SHARED_SKILLS - skill_names)
+    if missing_shared:
+        fail("missing expected shared Agent Kit skills: " + ", ".join(missing_shared))
     for sf in skill_files:
         rel = sf.relative_to(ROOT).as_posix()
         text = sf.read_text(encoding="utf-8")
@@ -357,7 +392,8 @@ def validate_batch_c_docs() -> None:
     # Repo docs cross-linked from README/SKILL/commands.
     require("docs/configuration.md")          # #5 / #17 env + cache config
     require("docs/safety.md")                 # #6 fetch/kernel boundary
-    require("skills/spedas-workflow/reference/troubleshooting.md")  # #13 runbook
+    require("skills/spedas-skills-index/SKILL.md")  # shared skill router
+    require("skills/spedas-workflow/SKILL.md")       # default workflow skill
 
     # #6: enabled-by-default fetch/kernel guard plus compatibility example.
     # The active guard is the runtime safety gate; the example doc/wrapper keeps
@@ -581,7 +617,8 @@ def main() -> int:
     validate_hooks(data.get("hooks"))
     validate_mcp(data.get("mcpServers"))
 
-    # Onboarding (#12) depends on the workflow skill existing.
+    # Onboarding (#12) depends on the shared skill router and workflow skill existing.
+    require("skills/spedas-skills-index/SKILL.md")
     require("skills/spedas-workflow/SKILL.md")
 
     # Batch C (#5/#6/#9/#13/#14/#17): cross-referenced docs, runbook, templates,

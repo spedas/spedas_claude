@@ -10,7 +10,7 @@ the Agent Kit commit, and the MCP protocol range.
 | Component | Pinned value | Source of truth |
 |---|---|---|
 | `spedas-claude` wrapper | `0.1.0` on `main` (no release tag cut yet) | `.claude-plugin/plugin.json` |
-| `spedas_agent_kit` commit | `48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8` |
+| `spedas_agent_kit` commit | `161aecc087e7bf1ecdd4879b3cacd44d0980e50e` | `.mcp.json` `--from git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e` |
 | Default Agent Kit extras | none | base 13-tool surface; analysis/datasource/compat tiers are gated opt-ins |
 | MCP protocol range | `mcp>=1.26.0,<2` | `.mcp.json` `--with` |
 
@@ -19,7 +19,7 @@ the Agent Kit commit, and the MCP protocol range.
 ```jsonc
 "command": "uvx",
 "args": ["--with", "mcp>=1.26.0,<2",
-         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8",
+         "--from", "git+https://github.com/spedas/spedas_agent_kit.git@161aecc087e7bf1ecdd4879b3cacd44d0980e50e",
          "spedas-agent-kit"]
 ```
 
@@ -41,7 +41,7 @@ python scripts/smoke_mcp_runtime.py --json --timeout 300
 
 In the smoke JSON, confirm:
 
-- `dependency_audit.resolved_spedas_agent_kit_commit == "48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8"`
+- `dependency_audit.resolved_spedas_agent_kit_commit == "161aecc087e7bf1ecdd4879b3cacd44d0980e50e"`
 - `dependency_audit.ref_kind == "commit"`
 - `dependency_audit.is_pinned == true`
 - `dependency_audit.mcp_has_upper_bound == true`
@@ -55,7 +55,7 @@ In the smoke JSON, confirm:
 To confirm the commit still exists upstream:
 
 ```bash
-gh api repos/spedas/spedas_agent_kit/commits/48dc50d9c31ba608019c8ea3ac3d72ac2b5158b8 >/dev/null
+gh api repos/spedas/spedas_agent_kit/commits/161aecc087e7bf1ecdd4879b3cacd44d0980e50e >/dev/null
 ```
 
 ## Bump procedure

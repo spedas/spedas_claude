@@ -27,12 +27,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import mcp_client_common as mcp_client  # noqa: E402
 
-# Tool groups, aligned with the reference docs under
-# skills/spedas-workflow/reference/. The smoke verifies that each advertised
-# group is actually present at runtime, not just that the total tool count
-# matches. This catches a backend that silently drops the geometry/SPICE family
-# or the unified facade while still exposing "enough" tools to pass a count
-# check. See tool-examples.md, geometry-spice.md, backend-compatibility.md.
+# Tool groups, aligned with the shared skills exported from Agent Kit into
+# skills/. The smoke verifies that each advertised group is actually present at
+# runtime, not just that the total tool count matches. This catches a backend
+# that silently drops the geometry/SPICE family or the unified facade while still
+# exposing "enough" tools to pass a count check.
 # The Agent Kit tool surface is TIERED, not a flat list. Only the base/default
 # tools are unconditionally advertised. Optional families are gated:
 #   - analysis  -> registered only when the ``[analysis]`` extra is installed.
@@ -93,6 +92,7 @@ BASE_EXPECTED_TOOLS = [
 
 EXPECTED_SKILL_RESOURCES = [
     "spedas-skill://index",
+    "spedas-skill://skills/spedas-skills-index",
     "spedas-skill://skills/spedas-workflow",
 ]
 
