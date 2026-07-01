@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Repin to Agent Kit `8fcfc7dd0e6f01800f301590ed8213eb33683582` and sync the Batch 2 OMNI/Kyoto/NOAA smoke workflow skill (`omni-kyoto-noaa-smoke-workflows`), raising the shared skill/resource surface to 31 skills / 65 resources without adding default tools.
+- Repin to Agent Kit `a6e8f7e486c3d7fdfc0aeb17fc1b3a9ffe8adfd0` and sync the Batch 3 THEMIS workflow routing skill (`themis-workflows`), raising the shared skill/resource surface to 32 skills / 66 resources without adding default tools.
 
 # Changelog
 
