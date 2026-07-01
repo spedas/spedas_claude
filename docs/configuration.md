@@ -133,7 +133,7 @@ deployment, pre-warm `UV_CACHE_DIR` once with network access:
 
 ```bash
 UV_CACHE_DIR=/shared/uv-cache \
-  uvx --from "git+https://github.com/spedas/spedas_agent_kit.git@e6e27a2a2ced1468eeef93ab0d0e1870a57538d9" spedas-agent-kit --help
+  uvx --from "git+https://github.com/spedas/spedas_agent_kit.git@bec499f999846571ae1b2964275f9225ac457c27" spedas-agent-kit --help
 ```
 
 then point `.mcp.json`'s process at the same `UV_CACHE_DIR`.
