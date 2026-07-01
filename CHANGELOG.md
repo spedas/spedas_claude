@@ -1,3 +1,7 @@
+## Unreleased
+
+- Repin to Agent Kit `8e3789539feb0ce79fe112be17465b40f363696d` and sync the Batch 1 foundational PySPEDAS/IDL shared skills (`pyspedas-load-planning`, `tplot-data-lifecycle`, `spedas-heritage-vocabulary`).
+
 # Changelog
 
 All notable changes to the **spedas-claude** plugin are documented here. The
